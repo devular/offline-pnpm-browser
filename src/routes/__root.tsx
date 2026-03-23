@@ -1,15 +1,9 @@
 /// <reference types="vite/client" />
-import {
-  createRootRoute,
-  HeadContent,
-  Link,
-  Outlet,
-  Scripts,
-  useNavigate,
-} from '@tanstack/react-router';
-import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
+import { createRootRoute, Link, Outlet, useNavigate } from '@tanstack/react-router';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { searchPackages } from '@root/lib/packages.functions';
 import type { SearchResponse } from '@root/lib/packages.functions';
+import { RootDocument } from '@root/components/RootDocument';
 import appCss from '@root/styles/global.css?url';
 
 export const Route = createRootRoute({
@@ -36,20 +30,6 @@ export const Route = createRootRoute({
   shellComponent: RootDocument,
   component: RootLayout,
 });
-
-function RootDocument({ children }: { children: ReactNode }) {
-  return (
-    <html lang="en">
-      <head>
-        <HeadContent />
-      </head>
-      <body>
-        {children}
-        <Scripts />
-      </body>
-    </html>
-  );
-}
 
 function highlightMatch(text: string, query: string) {
   if (!query) return text;

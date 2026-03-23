@@ -1,7 +1,6 @@
-import { createFileRoute, Link } from '@tanstack/react-router';
+import { createFileRoute } from '@tanstack/react-router';
 import { getCategories, getDbStats } from '@root/lib/packages.functions';
-import type { CategoriesResponse } from '@root/lib/packages.functions';
-import type { DbStats } from '@root/lib/db.server';
+import { CategoryGrid } from '@root/components/CategoryGrid';
 
 export const Route = createFileRoute('/')({
   loader: async () => {
@@ -39,25 +38,5 @@ function HomePage() {
         categorized
       </footer>
     </>
-  );
-}
-
-function CategoryGrid({ categories }: { categories: CategoriesResponse }) {
-  return (
-    <section>
-      <div className="category-grid">
-        {categories.categories.map((cat) => (
-          <Link
-            key={cat.slug}
-            to="/category/$slug"
-            params={{ slug: cat.slug }}
-            className="cat-card"
-          >
-            <h3>{cat.name}</h3>
-            <span className="count">{cat.count} packages</span>
-          </Link>
-        ))}
-      </div>
-    </section>
   );
 }

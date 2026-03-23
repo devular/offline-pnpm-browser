@@ -1,14 +1,13 @@
-import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
-import { useState, useMemo, useRef, useEffect } from 'react';
+import { createFileRoute, Link } from '@tanstack/react-router';
+import { useMemo, useRef, useEffect } from 'react';
 import { marked, type MarkedExtension } from 'marked';
 import { highlight } from 'sugar-high';
 import { getPackageDetail, getDependents, getPackageVersions } from '@root/lib/packages.functions';
-import type { DependentsResponse } from '@root/lib/packages.functions';
 import { Badge } from '@root/components/Badge';
-import { Collapsible } from '@root/components/Collapsible';
-import { CopyButton } from '@root/components/CopyButton';
-import { DepItem } from '@root/components/DepItem';
-import { useCopy } from '@root/hooks/useCopy';
+import { InstallCommand } from '@root/components/InstallCommand';
+import { VersionSelector } from '@root/components/VersionSelector';
+import { DepsSection } from '@root/components/DepsSection';
+import { CollapsibleDependents } from '@root/components/CollapsibleDependents';
 
 type PackageSearch = { v?: string };
 
@@ -230,118 +229,5 @@ function PackagePage() {
         </section>
       )}
     </main>
-  );
-}
-
-// --- Install command ---
-
-function InstallCommand({ name, version }: { name: string; version: string }) {
-  const cmd = `pnpm add ${name}@${version} --offline`;
-  const { copy, copied } = useCopy();
-
-  return (
-    <div className="install-cmd" onClick={() => copy(cmd)}>
-      <code className="install-cmd-text">
-        <span className="install-cmd-prompt">$</span> {cmd}
-      </code>
-      <span className={`install-cmd-action ${copied ? 'install-cmd-copied' : ''}`}>
-        {copied ? 'Copied' : 'Click to copy'}
-      </span>
-    </div>
-  );
-}
-
-// --- Version selector ---
-
-function VersionSelector({
-  currentVersion,
-  versions,
-  packageName,
-}: {
-  currentVersion: string;
-  versions: Array<{ id: number; version: string }>;
-  packageName: string;
-}) {
-  const navigate = useNavigate();
-
-  if (versions.length <= 1) {
-    return <span className="pkg-ver">{currentVersion}</span>;
-  }
-
-  return (
-    <div className="version-select-wrap">
-      <select
-        className="version-select"
-        value={currentVersion}
-        onChange={(e) => {
-          const newVersion = e.target.value;
-          navigate({
-            to: '/package/$name',
-            params: { name: packageName },
-            search: { v: newVersion },
-          });
-        }}
-        aria-label="Package version"
-      >
-        {versions.map((v) => (
-          <option key={v.id} value={v.version}>
-            {v.version}
-          </option>
-        ))}
-      </select>
-      <span className="version-count">{versions.length} versions</span>
-    </div>
-  );
-}
-
-// --- Dep sections ---
-
-function DepsSection({
-  title,
-  deps,
-  defaultOpen = true,
-}: {
-  title: string;
-  deps: Array<{ dep_name: string; dep_version: string }>;
-  defaultOpen?: boolean;
-}) {
-  if (deps.length === 0) return null;
-
-  return (
-    <Collapsible title={title} count={deps.length} defaultOpen={defaultOpen}>
-      <div className="dep-list">
-        {deps.map((dep) => (
-          <DepItem key={dep.dep_name} name={dep.dep_name} version={dep.dep_version} />
-        ))}
-      </div>
-    </Collapsible>
-  );
-}
-
-function CollapsibleDependents({ dependents }: { dependents: DependentsResponse }) {
-  const [showAll, setShowAll] = useState(false);
-
-  if (dependents.count === 0) return null;
-
-  const visible = showAll ? dependents.dependents : dependents.dependents.slice(0, 20);
-
-  return (
-    <Collapsible title="Dependents" count={dependents.count} defaultOpen={dependents.count <= 15}>
-      <div className="dep-list">
-        {visible.map((dep, i) => (
-          <DepItem
-            key={`${dep.name}-${i}`}
-            name={dep.name}
-            version={dep.dep_version}
-            type={dep.dep_type}
-          />
-        ))}
-        {!showAll && dependents.dependents.length > 20 && (
-          <button className="show-more-btn" onClick={() => setShowAll(true)}>
-            Show all {dependents.count} dependents
-          </button>
-        )}
-      </div>
-    </Collapsible>
   );
 }
