@@ -17,12 +17,15 @@ interface IndexFile {
   name: string;
   version: string;
   requiresBuild?: boolean;
-  files: Record<string, {
-    checkedAt: number;
-    integrity: string;
-    mode: number;
-    size: number;
-  }>;
+  files: Record<
+    string,
+    {
+      checkedAt: number;
+      integrity: string;
+      mode: number;
+      size: number;
+    }
+  >;
 }
 
 interface PackageJson {
@@ -206,7 +209,7 @@ async function indexStore() {
       continue; // not a directory
     }
 
-    const jsonFiles = files.filter(f => f.endsWith('.json'));
+    const jsonFiles = files.filter((f) => f.endsWith('.json'));
 
     for (const jsonFile of jsonFiles) {
       try {
@@ -227,13 +230,15 @@ async function indexStore() {
           if (content) {
             try {
               pkgJson = JSON.parse(content);
-            } catch { /* use defaults */ }
+            } catch {
+              /* use defaults */
+            }
           }
         }
 
         // Resolve README
         let readme: string | null = null;
-        const readmeKey = Object.keys(index.files).find(k => /^readme/i.test(k));
+        const readmeKey = Object.keys(index.files).find((k) => /^readme/i.test(k));
         if (readmeKey) {
           readme = await readStoreFile(storePath, index.files[readmeKey].integrity);
           // Truncate large READMEs to 50KB
@@ -259,7 +264,7 @@ async function indexStore() {
           normalizeAuthor(pkgJson.author),
           index.requiresBuild ? 1 : 0,
           fileCount,
-          totalSize
+          totalSize,
         );
 
         // Get the inserted package ID
@@ -317,9 +322,7 @@ async function indexStore() {
   const categoryFiles = await readdir(GENERATED);
   for (const file of categoryFiles) {
     if (file === 'all-packages.json' || !file.endsWith('.json')) continue;
-    const catData: CategoryFile = JSON.parse(
-      await readFile(resolve(GENERATED, file), 'utf-8')
-    );
+    const catData: CategoryFile = JSON.parse(await readFile(resolve(GENERATED, file), 'utf-8'));
     for (const pkg of catData.curated) {
       insertCat.run(catData.slug, catData.name, 'curated', pkg);
     }
@@ -329,12 +332,14 @@ async function indexStore() {
   }
 
   // Print stats
-  const stats = db.prepare(`
+  const stats = db
+    .prepare(`
     SELECT
       (SELECT COUNT(*) FROM packages) as packages,
       (SELECT COUNT(*) FROM dependencies) as dependencies,
       (SELECT COUNT(*) FROM category_packages) as categorized
-  `).get() as { packages: number; dependencies: number; categorized: number };
+  `)
+    .get() as { packages: number; dependencies: number; categorized: number };
 
   log(`Done!`);
   log(`  Packages indexed: ${stats.packages}`);

@@ -6,6 +6,12 @@
         "hooks": [
           {
             "type": "command",
+            "command": "node -e \"let d='';process.stdin.on('data',c=>d+=c);process.stdin.on('end',()=>{const j=JSON.parse(d);const f=j.tool_response?.filePath||j.tool_input?.file_path||'';if(!/\\.(ts|tsx|js|jsx|css|html|json)$/.test(f)){process.exit(0)}process.stdout.write(f);})\" | { read -r f; [ -z \"$f\" ] && exit 0; cd /Users/jonsherrard/projects/offline-setup && npx oxfmt --write \"$f\" 2>&1; } || true",
+            "timeout": 10,
+            "statusMessage": "Formatting with oxfmt..."
+          },
+          {
+            "type": "command",
             "command": "node -e \"let d='';process.stdin.on('data',c=>d+=c);process.stdin.on('end',()=>{const j=JSON.parse(d);const f=j.tool_response?.filePath||j.tool_input?.file_path||'';if(!/\\.(ts|tsx)$/.test(f)){process.exit(0)}process.stdout.write(f);})\" | { read -r f; [ -z \"$f\" ] && exit 0; cd /Users/jonsherrard/projects/offline-setup && npx tsc --noEmit 2>&1; npx oxlint -c oxlintrc.json \"$f\" 2>&1; } || true",
             "timeout": 30,
             "statusMessage": "Running TypeScript check & oxlint..."

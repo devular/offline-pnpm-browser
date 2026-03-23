@@ -28,7 +28,7 @@ async function loadCategories() {
     <div class="cat-card" data-slug="${c.slug}">
       <h3>${c.name}</h3>
       <span class="count">${c.count} packages</span>
-    </div>`
+    </div>`,
     )
     .join('');
 
@@ -68,10 +68,7 @@ async function showCategory(slug) {
 
 function renderSection(title, packages, type) {
   const items = packages
-    .map(
-      (p) =>
-        `<div class="pkg-item"><span class="badge badge-${type}">${type}</span> ${p}</div>`
-    )
+    .map((p) => `<div class="pkg-item"><span class="badge badge-${type}">${type}</span> ${p}</div>`)
     .join('');
   return `<div class="pkg-section"><h4>${title} (${packages.length})</h4>${items}</div>`;
 }
