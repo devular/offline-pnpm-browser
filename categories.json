@@ -1,0 +1,110 @@
+[
+  {
+    "name": "Node.js Core",
+    "slug": "nodejs-core",
+    "curated": [
+      "express", "fastify", "hono", "koa", "dotenv", "winston", "pino",
+      "zod", "drizzle-orm", "prisma", "better-sqlite3", "pg", "ioredis",
+      "bullmq", "node-cron", "commander", "yargs", "inquirer", "chalk",
+      "ora", "execa", "got", "undici", "nanoid", "date-fns", "lodash-es",
+      "tsx", "nodemon"
+    ],
+    "keywords": ["node framework", "node server", "node database", "node logging"],
+    "maxFromSearch": 20
+  },
+  {
+    "name": "Modern React",
+    "slug": "modern-react",
+    "curated": [
+      "react", "react-dom", "next", "@tanstack/react-query",
+      "@tanstack/react-router", "zustand", "jotai", "react-hook-form",
+      "tailwindcss", "@radix-ui/react-dialog", "@radix-ui/react-dropdown-menu",
+      "@radix-ui/react-popover", "@radix-ui/react-tooltip", "@radix-ui/react-slot",
+      "@radix-ui/react-label", "@radix-ui/react-select", "@radix-ui/react-checkbox",
+      "@radix-ui/react-tabs", "@radix-ui/react-avatar", "@radix-ui/react-switch",
+      "clsx", "class-variance-authority", "tailwind-merge",
+      "framer-motion", "react-aria"
+    ],
+    "keywords": ["react component library", "react state management", "react ui"],
+    "maxFromSearch": 20
+  },
+  {
+    "name": "Build & Dev Tools",
+    "slug": "build-dev-tools",
+    "curated": [
+      "vite", "esbuild", "rollup", "tsup", "typescript", "@swc/core",
+      "postcss", "autoprefixer", "concurrently", "npm-run-all2"
+    ],
+    "keywords": ["javascript bundler", "typescript build tool"],
+    "maxFromSearch": 20
+  },
+  {
+    "name": "Testing",
+    "slug": "testing",
+    "curated": [
+      "vitest", "@testing-library/react", "@testing-library/jest-dom",
+      "playwright", "@playwright/test", "msw", "c8", "nyc"
+    ],
+    "keywords": ["javascript testing", "react testing"],
+    "maxFromSearch": 20
+  },
+  {
+    "name": "Linting & Formatting",
+    "slug": "linting-formatting",
+    "curated": [
+      "eslint", "prettier", "@biomejs/biome", "oxlint",
+      "stylelint", "lint-staged", "husky"
+    ],
+    "keywords": ["javascript linter", "code formatter"],
+    "maxFromSearch": 20
+  },
+  {
+    "name": "CI & Code Quality",
+    "slug": "ci-code-quality",
+    "curated": [
+      "knip", "depcheck", "madge", "publint",
+      "@arethetypeswrong/cli", "@changesets/cli", "turbo", "nx"
+    ],
+    "keywords": ["code quality javascript", "dead code detection"],
+    "maxFromSearch": 20
+  },
+  {
+    "name": "CLI Development",
+    "slug": "cli-development",
+    "curated": [
+      "commander", "yargs", "inquirer", "prompts", "clipanion",
+      "meow", "cac", "citty", "consola", "listr2", "ink"
+    ],
+    "keywords": ["cli framework node", "terminal ui node"],
+    "maxFromSearch": 20
+  },
+  {
+    "name": "Monorepo & Workspace",
+    "slug": "monorepo-workspace",
+    "curated": [
+      "turbo", "nx", "lerna", "@changesets/cli"
+    ],
+    "keywords": ["monorepo tool", "workspace management"],
+    "maxFromSearch": 20
+  },
+  {
+    "name": "API & Auth",
+    "slug": "api-auth",
+    "curated": [
+      "@trpc/server", "@trpc/client", "graphql", "@apollo/server",
+      "passport", "jose", "next-auth", "lucia"
+    ],
+    "keywords": ["api framework node", "authentication node"],
+    "maxFromSearch": 20
+  },
+  {
+    "name": "Utilities & Types",
+    "slug": "utilities-types",
+    "curated": [
+      "type-fest", "ts-reset", "effect", "neverthrow",
+      "superjson", "devalue", "fast-json-stringify"
+    ],
+    "keywords": ["typescript utility types", "type safe javascript"],
+    "maxFromSearch": 20
+  }
+]
