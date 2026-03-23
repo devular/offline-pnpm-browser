@@ -51,6 +51,17 @@
   /* Motion */
   --ease: cubic-bezier(0.25, 0, 0, 1);
   --speed: 100ms;
+
+  /* Sugar-high syntax tokens — tuned for dark code blocks on paper */
+  --sh-class: #a8c0ff;
+  --sh-identifier: #d4d4d4;
+  --sh-sign: #7a828e;
+  --sh-string: #8dbcb6;
+  --sh-keyword: #f4938a;
+  --sh-comment: #6e6e6e;
+  --sh-jsxliterals: #c9a8e8;
+  --sh-entity: #6ec5c7;
+  --sh-property: #8ab4f0;
 }
 
 /* ═══ Reset ═══ */
@@ -609,13 +620,15 @@ a {
   padding: 0.1em 0.35em;
 }
 
-.readme-body pre {
+.readme-body pre,
+.readme-body pre.sh-code {
   background: var(--ink);
   color: var(--paper);
   padding: var(--s4) var(--s6);
   overflow-x: auto;
   margin: 1.5em 0;
   font-family: var(--font-mono);
+  position: relative;
 }
 
 .readme-body pre code {
@@ -624,6 +637,20 @@ a {
   color: inherit;
   font-size: var(--text-xs);
   line-height: 1.6;
+}
+
+/* Language label */
+.code-lang {
+  position: absolute;
+  top: var(--s2);
+  right: var(--s3);
+  font-family: var(--font-mono);
+  font-size: 0.5625rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-3);
+  opacity: 0.6;
+  pointer-events: none;
 }
 
 .readme-body ul,

@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from '@tanstack/react-router';
 import { useState, useMemo } from 'react';
-import { marked } from 'marked';
+import { marked, type MarkedExtension } from 'marked';
+import { highlight } from 'sugar-high';
 import { getPackageDetail, getDependents } from '../lib/packages.functions';
 import type { DependentsResponse } from '../lib/packages.functions';
 import { Badge, Collapsible, DepItem } from '../components';
@@ -54,7 +55,16 @@ function PackagePage() {
   const readmeHtml = useMemo(() => {
     if (!pkg.readme) return null;
     try {
-      return marked.parse(pkg.readme, { async: false }) as string;
+      const renderer: MarkedExtension = {
+        renderer: {
+          code({ text, lang }) {
+            const highlighted = highlight(text);
+            const langLabel = lang ? `<span class="code-lang">${lang}</span>` : '';
+            return `<pre class="sh-code">${langLabel}<code>${highlighted}</code></pre>`;
+          },
+        },
+      };
+      return marked.use(renderer).parse(pkg.readme, { async: false }) as string;
     } catch {
       return null;
     }
