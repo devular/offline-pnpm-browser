@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite dev",
     "build": "vite build",
-    "start": "node start.js",
+    "start": "vite build && node start.js",
     "serve": "npx tsx scripts/serve.ts",
     "index": "npx tsx scripts/index-store.ts",
     "index:full": "npx tsx scripts/index-store.ts --full",
