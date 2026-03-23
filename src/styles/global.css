@@ -912,3 +912,190 @@ a {
     grid-template-columns: 1fr;
   }
 }
+
+/* ═══════════════════════════════════════════
+   DELIGHT — mechanical satisfaction
+   ═══════════════════════════════════════════ */
+
+/* Category count slides right on hover */
+.cat-card .count {
+  display: inline-block;
+  transition:
+    transform var(--speed) var(--ease),
+    color var(--speed) var(--ease);
+}
+
+.cat-card:hover .count {
+  transform: translateX(4px);
+}
+
+/* Dep name: underline draws in from left */
+.dep-name {
+  position: relative;
+}
+
+.dep-name::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: -1px;
+  width: 0;
+  height: 1px;
+  background: var(--accent);
+  transition: width var(--speed) var(--ease);
+}
+
+.dep-item:hover .dep-name::after {
+  width: 100%;
+}
+
+/* Package name in lists: same underline draw */
+.pkg-item .pkg-name {
+  position: relative;
+}
+
+.pkg-item .pkg-name::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: -1px;
+  width: 0;
+  height: 1px;
+  background: var(--accent);
+  transition: width var(--speed) var(--ease);
+}
+
+.pkg-item:hover .pkg-name::after {
+  width: 100%;
+}
+
+/* Show more: press feedback */
+.show-more-btn:active {
+  transform: translateY(1px);
+}
+
+/* Search hint: show / key when unfocused */
+.header-search-wrap::after {
+  content: '/';
+  position: absolute;
+  right: 0.5rem;
+  top: 50%;
+  transform: translateY(-50%);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--text-3);
+  border: 1px solid var(--paper-dark);
+  padding: 0 0.3rem;
+  line-height: 1.4;
+  pointer-events: none;
+  transition: opacity var(--speed) var(--ease);
+}
+
+.header-search-wrap:focus-within::after {
+  opacity: 0;
+}
+
+/* Search input: extra right padding for the / hint */
+.header-search-input {
+  padding-right: 2rem;
+}
+
+/* Search dropdown items: stagger in */
+.search-dropdown-item {
+  animation: dropIn 80ms var(--ease) both;
+}
+
+.search-dropdown-item:nth-child(1) {
+  animation-delay: 0ms;
+}
+.search-dropdown-item:nth-child(2) {
+  animation-delay: 20ms;
+}
+.search-dropdown-item:nth-child(3) {
+  animation-delay: 40ms;
+}
+.search-dropdown-item:nth-child(4) {
+  animation-delay: 60ms;
+}
+.search-dropdown-item:nth-child(5) {
+  animation-delay: 80ms;
+}
+.search-dropdown-item:nth-child(6) {
+  animation-delay: 100ms;
+}
+.search-dropdown-item:nth-child(7) {
+  animation-delay: 120ms;
+}
+.search-dropdown-item:nth-child(8) {
+  animation-delay: 140ms;
+}
+
+@keyframes dropIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Section toggle: satisfying press */
+.section-toggle:active {
+  transform: translateX(2px);
+}
+
+/* Logo: letter-spacing tightens on hover */
+.site-logo {
+  transition:
+    color var(--speed) var(--ease),
+    letter-spacing 200ms var(--ease);
+}
+
+.site-logo:hover {
+  letter-spacing: 0.08em;
+}
+
+/* Package title: accent dot */
+.pkg-title::before {
+  content: '';
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  background: var(--accent);
+  margin-right: var(--s3);
+  vertical-align: middle;
+  position: relative;
+  top: -2px;
+}
+
+/* Graph stat numbers: hover highlights */
+.graph-stat {
+  transition: color var(--speed) var(--ease);
+  cursor: default;
+}
+
+.graph-stat:hover {
+  color: var(--ink);
+}
+
+/* Badge hover: subtle lift */
+.badge {
+  transition:
+    color var(--speed) var(--ease),
+    border-color var(--speed) var(--ease);
+}
+
+.badge:hover {
+  border-color: var(--ink);
+  color: var(--ink);
+}
+
+/* No results: terse, confident */
+.no-results {
+  font-family: var(--font-mono);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-size: var(--text-xs);
+}

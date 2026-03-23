@@ -7,7 +7,7 @@ import {
   Scripts,
   useNavigate,
 } from '@tanstack/react-router';
-import { useCallback, useRef, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import { searchPackages } from '../lib/packages.functions';
 import type { SearchResponse } from '../lib/packages.functions';
 import appCss from '../styles/global.css?url';
@@ -57,6 +57,27 @@ function RootLayout() {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout>>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  // / key focuses search from anywhere
+  useEffect(() => {
+    const handleGlobalKey = (e: KeyboardEvent) => {
+      if (e.key === '/' && document.activeElement?.tagName !== 'INPUT') {
+        e.preventDefault();
+        inputRef.current?.focus();
+      }
+    };
+    document.addEventListener('keydown', handleGlobalKey);
+    return () => document.removeEventListener('keydown', handleGlobalKey);
+  }, []);
+
+  // Console easter egg
+  useEffect(() => {
+    console.log(
+      '%c[ PACKAGE EXPLORER ]%c\nBuilt with TanStack Start + SQLite FTS5\n9,855 packages indexed from your local pnpm store',
+      'font-weight:bold;font-size:14px;font-family:monospace',
+      'font-family:monospace;color:#8a8a94',
+    );
+  }, []);
 
   const handleSearch = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const q = e.target.value.trim();
