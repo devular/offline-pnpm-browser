@@ -223,7 +223,7 @@ async function start() {
         .join(' ');
 
       try {
-        const rows = searchStmt.all(sanitized, limit) as SearchRow[];
+        const rows = searchStmt.all(sanitized, limit) as unknown as SearchRow[];
         return {
           query: q,
           count: rows.length,
@@ -244,7 +244,7 @@ async function start() {
            FROM packages WHERE name LIKE ? OR description LIKE ?
            ORDER BY name LIMIT ?`,
           )
-          .all(`%${q}%`, `%${q}%`, limit) as SearchRow[];
+          .all(`%${q}%`, `%${q}%`, limit) as unknown as SearchRow[];
 
         return {
           query: q,
@@ -263,13 +263,13 @@ async function start() {
   );
 
   fastify.get<{ Params: { name: string } }>('/api/package/:name', async (request, reply) => {
-    const row = packageByNameStmt.get(request.params.name) as PackageRow | undefined;
+    const row = packageByNameStmt.get(request.params.name) as unknown as PackageRow | undefined;
     if (!row) {
       return reply.status(404).send({ error: 'package not found' });
     }
 
-    const deps = depsStmt.all(row.id) as DependencyRow[];
-    const categories = categoriesForPkgStmt.all(row.id) as CategoryRow[];
+    const deps = depsStmt.all(row.id) as unknown as DependencyRow[];
+    const categories = categoriesForPkgStmt.all(row.id) as unknown as CategoryRow[];
 
     return {
       id: row.id,
@@ -296,7 +296,7 @@ async function start() {
   });
 
   fastify.get<{ Params: { name: string } }>('/api/dependents/:name', async (request, reply) => {
-    const rows = dependentsStmt.all(request.params.name) as DependentRow[];
+    const rows = dependentsStmt.all(request.params.name) as unknown as DependentRow[];
     if (rows.length === 0) {
       // Check if the package exists at all
       const exists = db
@@ -314,12 +314,12 @@ async function start() {
   });
 
   fastify.get<{ Params: { name: string } }>('/api/dependees/:name', async (request, reply) => {
-    const row = packageByNameStmt.get(request.params.name) as PackageRow | undefined;
+    const row = packageByNameStmt.get(request.params.name) as unknown as PackageRow | undefined;
     if (!row) {
       return reply.status(404).send({ error: 'package not found' });
     }
 
-    const deps = depsStmt.all(row.id) as DependencyRow[];
+    const deps = depsStmt.all(row.id) as unknown as DependencyRow[];
     return {
       package: request.params.name,
       version: row.version,

@@ -94,7 +94,7 @@ export const searchPackages = createServerFn({ method: 'GET' })
          ORDER BY f.rank
          LIMIT ?`,
         )
-        .all(sanitized, limit) as SearchResult[];
+        .all(sanitized, limit) as unknown as SearchResult[];
 
       return {
         query: q,
@@ -115,7 +115,7 @@ export const searchPackages = createServerFn({ method: 'GET' })
          FROM packages WHERE name LIKE ? OR description LIKE ?
          ORDER BY name LIMIT ?`,
         )
-        .all(`%${q}%`, `%${q}%`, limit) as SearchResult[];
+        .all(`%${q}%`, `%${q}%`, limit) as unknown as SearchResult[];
 
       return {
         query: q,
@@ -164,10 +164,10 @@ export const getPackageDetail = createServerFn({ method: 'GET' })
     const row = version
       ? (db
           .prepare('SELECT * FROM packages WHERE name = ? AND version = ? LIMIT 1')
-          .get(name, version) as PackageRow | undefined)
-      : (db.prepare('SELECT * FROM packages WHERE name = ? ORDER BY id DESC LIMIT 1').get(name) as
-          | PackageRow
-          | undefined);
+          .get(name, version) as unknown as PackageRow | undefined)
+      : (db
+          .prepare('SELECT * FROM packages WHERE name = ? ORDER BY id DESC LIMIT 1')
+          .get(name) as unknown as PackageRow | undefined);
 
     if (!row) return null;
 
@@ -175,13 +175,13 @@ export const getPackageDetail = createServerFn({ method: 'GET' })
       .prepare(
         'SELECT dep_name, dep_version, dep_type FROM dependencies WHERE package_id = ? ORDER BY dep_type, dep_name',
       )
-      .all(row.id) as DependencyRow[];
+      .all(row.id) as unknown as DependencyRow[];
 
     const categories = db
       .prepare(
         'SELECT category_slug, category_name, type FROM category_packages WHERE package_id = ?',
       )
-      .all(row.id) as CategoryRow[];
+      .all(row.id) as unknown as CategoryRow[];
 
     return {
       id: row.id,
@@ -227,7 +227,7 @@ export const getDependents = createServerFn({ method: 'GET' })
        WHERE d.dep_name = ?
        ORDER BY p.name`,
       )
-      .all(name) as DependentRow[];
+      .all(name) as unknown as DependentRow[];
 
     return { package: name, count: rows.length, dependents: rows };
   });
@@ -250,7 +250,7 @@ export const getPackageVersions = createServerFn({ method: 'GET' })
     const db = getDb();
     const rows = db
       .prepare('SELECT id, version FROM packages WHERE name = ? ORDER BY id DESC')
-      .all(name) as Array<{ id: number; version: string }>;
+      .all(name) as unknown as Array<{ id: number; version: string }>;
     return rows.sort((a, b) => compareSemver(a.version, b.version));
   });
 
@@ -266,5 +266,5 @@ export const getDbStats = createServerFn({ method: 'GET' }).handler(async (): Pr
       (SELECT COUNT(*) FROM dependencies) as total_dependencies,
       (SELECT COUNT(*) FROM category_packages) as total_categorized`,
     )
-    .get() as DbStats;
+    .get() as unknown as DbStats;
 });

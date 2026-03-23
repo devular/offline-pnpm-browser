@@ -16,6 +16,7 @@
     "backup": "node scripts/backup.js",
     "restore": "node scripts/restore.js",
     "restore:list": "node scripts/restore.js --list",
+    "typecheck": "tsc --noEmit",
     "prepare": "husky"
   },
   "dependencies": {
@@ -48,7 +49,8 @@
   "lint-staged": {
     "*.{ts,tsx}": [
       "oxfmt --write",
-      "oxlint -c oxlintrc.json"
+      "oxlint -c oxlintrc.json",
+      "bash -c 'tsc --noEmit'"
     ],
     "*.{js,jsx}": [
       "oxfmt --write",

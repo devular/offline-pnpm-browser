@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from '@tanstack/react-router';
-import { getCategories, getDbStats } from '../lib/packages.functions';
-import type { CategoriesResponse } from '../lib/packages.functions';
-import type { DbStats } from '../lib/db.server';
+import { getCategories, getDbStats } from '@root/lib/packages.functions';
+import type { CategoriesResponse } from '@root/lib/packages.functions';
+import type { DbStats } from '@root/lib/db.server';
 
 export const Route = createFileRoute('/')({
   loader: async () => {

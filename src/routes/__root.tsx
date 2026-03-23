@@ -8,9 +8,9 @@ import {
   useNavigate,
 } from '@tanstack/react-router';
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
-import { searchPackages } from '../lib/packages.functions';
-import type { SearchResponse } from '../lib/packages.functions';
-import appCss from '../styles/global.css?url';
+import { searchPackages } from '@root/lib/packages.functions';
+import type { SearchResponse } from '@root/lib/packages.functions';
+import appCss from '@root/styles/global.css?url';
 
 export const Route = createRootRoute({
   head: () => ({

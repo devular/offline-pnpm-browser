@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from '@tanstack/react-router';
-import { getCategoryDetail } from '../lib/packages.functions';
-import { Badge } from '../components';
+import { getCategoryDetail } from '@root/lib/packages.functions';
+import { Badge } from '@root/components/Badge';
 
 export const Route = createFileRoute('/category/$slug')({
   loader: async ({ params }) => {

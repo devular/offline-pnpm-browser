@@ -1,4 +1,4 @@
-import { useCopy } from '../hooks';
+import { useCopy } from '@root/hooks/useCopy';
 
 interface CopyButtonProps {
   text: string;

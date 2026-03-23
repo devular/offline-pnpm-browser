@@ -40,7 +40,10 @@
     "no-async-promise-executor": "error",
     "no-await-in-loop": "off",
     "no-promise-executor-return": "error",
-    "require-await": "warn"
+    "require-await": "warn",
+    "no-barrel-file/no-barrel-file": "error",
+    "no-relative-imports/no-parent-imports": "error"
   },
+  "jsPlugins": ["./plugins/no-barrel-file.js", "./plugins/no-relative-imports.js"],
   "ignorePatterns": ["node_modules", "dist", "*.db"]
 }

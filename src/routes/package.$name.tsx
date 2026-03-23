@@ -2,10 +2,13 @@ import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
 import { useState, useMemo, useRef, useEffect } from 'react';
 import { marked, type MarkedExtension } from 'marked';
 import { highlight } from 'sugar-high';
-import { getPackageDetail, getDependents, getPackageVersions } from '../lib/packages.functions';
-import type { DependentsResponse } from '../lib/packages.functions';
-import { Badge, Collapsible, CopyButton, DepItem } from '../components';
-import { useCopy } from '../hooks';
+import { getPackageDetail, getDependents, getPackageVersions } from '@root/lib/packages.functions';
+import type { DependentsResponse } from '@root/lib/packages.functions';
+import { Badge } from '@root/components/Badge';
+import { Collapsible } from '@root/components/Collapsible';
+import { CopyButton } from '@root/components/CopyButton';
+import { DepItem } from '@root/components/DepItem';
+import { useCopy } from '@root/hooks/useCopy';
 
 type PackageSearch = { v?: string };
 
