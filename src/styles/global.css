@@ -554,3 +554,213 @@ main {
     grid-template-columns: 1fr;
   }
 }
+
+/* ===== Package Page Header (left-aligned) ===== */
+.pkg-page-header {
+  text-align: left;
+  max-width: 960px;
+  margin: 0 auto;
+  width: 100%;
+  padding: var(--space-6) var(--space-8) var(--space-4);
+}
+
+.pkg-page-header .back-link {
+  margin-bottom: var(--space-3);
+}
+
+.pkg-page-header .pkg-header {
+  justify-content: flex-start;
+}
+
+.pkg-page-header .pkg-header h1 {
+  margin-bottom: 0;
+}
+
+.pkg-page-header .pkg-description {
+  text-align: left;
+}
+
+.pkg-keywords-inline {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-top: var(--space-3);
+}
+
+/* ===== Collapsible Sections ===== */
+.section-toggle {
+  cursor: pointer;
+  user-select: none;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.section-toggle:hover {
+  color: var(--text-link);
+}
+
+.toggle-arrow {
+  font-size: 0.625rem;
+  transition: transform var(--duration-normal) var(--ease-out);
+  color: var(--text-tertiary);
+}
+
+.toggle-arrow.open {
+  transform: rotate(90deg);
+}
+
+/* ===== Show More Button ===== */
+.show-more-btn {
+  display: block;
+  width: 100%;
+  padding: var(--space-3);
+  margin-top: var(--space-2);
+  background: var(--bg-raised);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  color: var(--text-link);
+  font-size: 0.8125rem;
+  font-family: var(--font-sans);
+  cursor: pointer;
+  transition:
+    background var(--duration-fast) var(--ease-out),
+    border-color var(--duration-fast) var(--ease-out);
+}
+
+.show-more-btn:hover {
+  background: var(--accent-blue-subtle);
+  border-color: var(--accent-blue);
+}
+
+/* ===== Rendered Markdown README ===== */
+.readme-content {
+  background: var(--bg-raised);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg);
+  padding: var(--space-6);
+  font-size: 0.875rem;
+  line-height: 1.7;
+  overflow-x: auto;
+  max-height: 600px;
+  overflow-y: auto;
+  color: var(--text-secondary);
+}
+
+.readme-raw {
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+
+/* Markdown rendered styles */
+.readme-content h1,
+.readme-content h2,
+.readme-content h3,
+.readme-content h4 {
+  color: var(--text-primary);
+  margin-top: 1.5em;
+  margin-bottom: 0.5em;
+  font-weight: 600;
+}
+
+.readme-content h1 {
+  font-size: 1.5rem;
+  padding-bottom: 0.3em;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.readme-content h2 {
+  font-size: 1.25rem;
+  padding-bottom: 0.3em;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.readme-content h3 {
+  font-size: 1.1rem;
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.readme-content h4 {
+  font-size: 1rem;
+}
+
+.readme-content p {
+  margin: 0.75em 0;
+}
+
+.readme-content a {
+  color: var(--text-link);
+}
+
+.readme-content a:hover {
+  text-decoration: underline;
+}
+
+.readme-content code {
+  background: var(--bg-overlay);
+  padding: 0.15em 0.4em;
+  border-radius: var(--radius-sm);
+  font-family: var(--font-mono);
+  font-size: 0.85em;
+}
+
+.readme-content pre {
+  background: var(--bg-base);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  padding: var(--space-4);
+  overflow-x: auto;
+  margin: 1em 0;
+}
+
+.readme-content pre code {
+  background: none;
+  padding: 0;
+  font-size: 0.8125rem;
+  line-height: 1.5;
+}
+
+.readme-content ul,
+.readme-content ol {
+  margin: 0.75em 0;
+  padding-left: 1.5em;
+}
+
+.readme-content li {
+  margin: 0.25em 0;
+}
+
+.readme-content blockquote {
+  border-left: 3px solid var(--border-emphasis);
+  padding-left: var(--space-4);
+  margin: 1em 0;
+  color: var(--text-tertiary);
+}
+
+.readme-content table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 1em 0;
+}
+
+.readme-content th,
+.readme-content td {
+  border: 1px solid var(--border-default);
+  padding: var(--space-2) var(--space-3);
+  text-align: left;
+}
+
+.readme-content th {
+  background: var(--bg-overlay);
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.readme-content img {
+  max-width: 100%;
+  height: auto;
+  border-radius: var(--radius-md);
+}
