@@ -4,11 +4,22 @@ Browse and search your local pnpm store — entirely offline.
 
 **Offline PNPM Browser** indexes npm packages cached in your local pnpm store into a searchable SQLite database with full-text search. Explore ~10,000 packages by category, read READMEs, inspect dependency graphs, and copy install commands — no network required.
 
+![Homepage — browse categories and stats](screenshots/homepage.png)
+
 ## Features
 
 - Full-text search across package names, descriptions, and keywords
+
+  ![Search with live results and keyboard navigation](screenshots/search.png)
+
 - Category-based browsing (Node.js Core, Modern React, Build Tools, etc.)
+
+  ![Category view — Modern React](screenshots/category.png)
+
 - Package detail pages with rendered READMEs, syntax-highlighted code blocks
+
+  ![Package detail — react](screenshots/package-detail.png)
+
 - Dependency and dependent graph navigation
 - Version selector with copy-to-clipboard install commands
 - Works completely offline after initial indexing
