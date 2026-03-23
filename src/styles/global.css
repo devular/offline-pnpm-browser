@@ -1266,19 +1266,6 @@ a {
   letter-spacing: 0.08em;
 }
 
-/* Package title: accent dot */
-.pkg-title::before {
-  content: '';
-  display: inline-block;
-  width: 6px;
-  height: 6px;
-  background: var(--accent);
-  margin-right: var(--s3);
-  vertical-align: middle;
-  position: relative;
-  top: -2px;
-}
-
 /* Graph stat numbers: hover highlights */
 .graph-stat {
   transition: color var(--speed) var(--ease);
