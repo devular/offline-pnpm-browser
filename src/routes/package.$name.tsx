@@ -7,10 +7,16 @@ import type { DependentsResponse } from '../lib/packages.functions';
 import { Badge, Collapsible, CopyButton, DepItem } from '../components';
 import { useCopy } from '../hooks';
 
+type PackageSearch = { v?: string };
+
 export const Route = createFileRoute('/package/$name')({
-  loader: async ({ params }) => {
+  validateSearch: (search: Record<string, unknown>): PackageSearch => ({
+    v: typeof search.v === 'string' ? search.v : undefined,
+  }),
+  loaderDeps: ({ search }) => ({ version: search.v }),
+  loader: async ({ params, deps }) => {
     const [pkg, dependents, versions] = await Promise.all([
-      getPackageDetail({ data: params.name }),
+      getPackageDetail({ data: { name: params.name, version: deps.version } }),
       getDependents({ data: params.name }),
       getPackageVersions({ data: params.name }),
     ]);
@@ -253,6 +259,8 @@ function VersionSelector({
   versions: Array<{ id: number; version: string }>;
   packageName: string;
 }) {
+  const navigate = useNavigate();
+
   if (versions.length <= 1) {
     return <span className="pkg-ver">{currentVersion}</span>;
   }
@@ -263,9 +271,12 @@ function VersionSelector({
         className="version-select"
         value={currentVersion}
         onChange={(e) => {
-          // Navigate by reloading the page — the loader picks the latest version anyway
-          // For now just show the dropdown; full version switching would need a version param in the route
-          window.location.href = `/package/${encodeURIComponent(packageName)}`;
+          const newVersion = e.target.value;
+          navigate({
+            to: '/package/$name',
+            params: { name: packageName },
+            search: { v: newVersion },
+          });
         }}
         aria-label="Package version"
       >

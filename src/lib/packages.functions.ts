@@ -158,12 +158,16 @@ export interface PackageDetail {
 }
 
 export const getPackageDetail = createServerFn({ method: 'GET' })
-  .inputValidator((name: string) => name)
-  .handler(async ({ data: name }): Promise<PackageDetail | null> => {
+  .inputValidator((input: { name: string; version?: string }) => input)
+  .handler(async ({ data: { name, version } }): Promise<PackageDetail | null> => {
     const db = getDb();
-    const row = db
-      .prepare('SELECT * FROM packages WHERE name = ? ORDER BY id DESC LIMIT 1')
-      .get(name) as PackageRow | undefined;
+    const row = version
+      ? (db
+          .prepare('SELECT * FROM packages WHERE name = ? AND version = ? LIMIT 1')
+          .get(name, version) as PackageRow | undefined)
+      : (db.prepare('SELECT * FROM packages WHERE name = ? ORDER BY id DESC LIMIT 1').get(name) as
+          | PackageRow
+          | undefined);
 
     if (!row) return null;
 
