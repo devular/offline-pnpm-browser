@@ -234,13 +234,24 @@ export const getDependents = createServerFn({ method: 'GET' })
 
 // --- Package versions ---
 
+function compareSemver(a: string, b: string): number {
+  const pa = a.split('.').map(Number);
+  const pb = b.split('.').map(Number);
+  for (let i = 0; i < 3; i++) {
+    const diff = (pb[i] || 0) - (pa[i] || 0);
+    if (diff !== 0) return diff;
+  }
+  return 0;
+}
+
 export const getPackageVersions = createServerFn({ method: 'GET' })
   .inputValidator((name: string) => name)
   .handler(async ({ data: name }): Promise<Array<{ id: number; version: string }>> => {
     const db = getDb();
-    return db
+    const rows = db
       .prepare('SELECT id, version FROM packages WHERE name = ? ORDER BY id DESC')
       .all(name) as Array<{ id: number; version: string }>;
+    return rows.sort((a, b) => compareSemver(a.version, b.version));
   });
 
 // --- DB stats ---

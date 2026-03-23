@@ -552,9 +552,8 @@ a {
 
 /* Install command */
 .install-cmd {
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  justify-content: space-between;
   gap: var(--s4);
   background: var(--ink);
   color: var(--paper);
