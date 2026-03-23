@@ -1,0 +1,10 @@
+{
+  "indentation": {
+    "style": "space",
+    "width": 2
+  },
+  "line_width": 100,
+  "quote_style": "single",
+  "semicolons": "always",
+  "trailing_commas": "all"
+}

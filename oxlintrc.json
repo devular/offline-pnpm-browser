@@ -1,0 +1,46 @@
+{
+  "$schema": "https://raw.githubusercontent.com/nicolo-ribaudo/oxlint-config-schema/main/schema.json",
+  "env": {
+    "node": true,
+    "browser": true,
+    "es2022": true
+  },
+  "globals": {
+    "process": "readonly",
+    "console": "readonly",
+    "Buffer": "readonly",
+    "__dirname": "readonly",
+    "__filename": "readonly",
+    "setTimeout": "readonly",
+    "clearTimeout": "readonly",
+    "setInterval": "readonly",
+    "clearInterval": "readonly"
+  },
+  "rules": {
+    "no-unused-vars": "warn",
+    "no-console": "off",
+    "no-debugger": "error",
+    "no-var": "error",
+    "no-undef": "error",
+    "no-empty": "warn",
+    "no-extra-boolean-cast": "warn",
+    "no-constant-condition": "warn",
+    "no-duplicate-case": "error",
+    "no-self-compare": "error",
+    "no-self-assign": "error",
+    "no-unreachable": "error",
+    "no-unsafe-negation": "error",
+    "no-loss-of-precision": "error",
+    "eqeqeq": "error",
+    "no-eval": "error",
+    "no-implied-eval": "error",
+    "no-new-wrappers": "error",
+    "no-throw-literal": "error",
+    "prefer-const": "warn",
+    "no-async-promise-executor": "error",
+    "no-await-in-loop": "off",
+    "no-promise-executor-return": "error",
+    "require-await": "warn"
+  },
+  "ignorePatterns": ["node_modules", "dist", "*.db"]
+}
