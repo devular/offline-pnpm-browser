@@ -1,5 +1,5 @@
 import { DatabaseSync } from 'node:sqlite';
-import { readFile, readdir } from 'node:fs/promises';
+import { readFile, readdir, stat } from 'node:fs/promises';
 import { existsSync, unlinkSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -10,6 +10,8 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(__dirname, '..');
 const GENERATED = resolve(ROOT, 'generated');
 const DB_PATH = resolve(ROOT, 'packages.db');
+
+const isFullRebuild = process.argv.includes('--full');
 
 // --- Types ---
 
@@ -58,7 +60,6 @@ function log(msg: string) {
 }
 
 function integrityToPath(storePath: string, integrity: string): string | null {
-  // integrity format: "sha512-<base64>"
   const match = integrity.match(/^sha512-(.+)$/);
   if (!match) return null;
 
@@ -100,16 +101,14 @@ function normalizeAuthor(author: PackageJson['author']): string | null {
 
 // --- Database setup ---
 
-function createDatabase(): DatabaseSync {
-  // Delete existing db for clean rebuild
-  if (existsSync(DB_PATH)) {
-    unlinkSync(DB_PATH);
-  }
-
-  const db = new DatabaseSync(DB_PATH);
-
+function createSchema(db: DatabaseSync) {
   db.exec(`
-    CREATE TABLE packages (
+    CREATE TABLE IF NOT EXISTS metadata (
+      key TEXT PRIMARY KEY,
+      value TEXT NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS packages (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       name TEXT NOT NULL,
       version TEXT NOT NULL,
@@ -127,7 +126,7 @@ function createDatabase(): DatabaseSync {
       UNIQUE(name, version)
     );
 
-    CREATE TABLE dependencies (
+    CREATE TABLE IF NOT EXISTS dependencies (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       package_id INTEGER NOT NULL,
       dep_name TEXT NOT NULL,
@@ -136,7 +135,7 @@ function createDatabase(): DatabaseSync {
       FOREIGN KEY (package_id) REFERENCES packages(id)
     );
 
-    CREATE TABLE category_packages (
+    CREATE TABLE IF NOT EXISTS category_packages (
       package_id INTEGER NOT NULL,
       category_slug TEXT NOT NULL,
       category_name TEXT NOT NULL,
@@ -145,25 +144,174 @@ function createDatabase(): DatabaseSync {
       FOREIGN KEY (package_id) REFERENCES packages(id)
     );
 
-    CREATE INDEX idx_packages_name ON packages(name);
-    CREATE INDEX idx_deps_package_id ON dependencies(package_id);
-    CREATE INDEX idx_deps_dep_name ON dependencies(dep_name);
-    CREATE INDEX idx_category_slug ON category_packages(category_slug);
+    CREATE INDEX IF NOT EXISTS idx_packages_name ON packages(name);
+    CREATE INDEX IF NOT EXISTS idx_deps_package_id ON dependencies(package_id);
+    CREATE INDEX IF NOT EXISTS idx_deps_dep_name ON dependencies(dep_name);
+    CREATE INDEX IF NOT EXISTS idx_category_slug ON category_packages(category_slug);
   `);
+}
 
-  // FTS5 virtual table for full-text search
+function ensureFts(db: DatabaseSync) {
+  const hasFts = db
+    .prepare("SELECT 1 FROM sqlite_master WHERE type='table' AND name='packages_fts'")
+    .get();
+  if (!hasFts) {
+    db.exec(`
+      CREATE VIRTUAL TABLE packages_fts USING fts5(
+        name, description, keywords, readme,
+        content='packages', content_rowid='id'
+      );
+    `);
+  }
+}
+
+function rebuildFts(db: DatabaseSync) {
+  // Drop and recreate for clean bulk insert
+  db.exec('DROP TABLE IF EXISTS packages_fts');
   db.exec(`
     CREATE VIRTUAL TABLE packages_fts USING fts5(
-      name,
-      description,
-      keywords,
-      readme,
-      content='packages',
-      content_rowid='id'
+      name, description, keywords, readme,
+      content='packages', content_rowid='id'
     );
+    INSERT INTO packages_fts(rowid, name, description, keywords, readme)
+    SELECT id, name, COALESCE(description, ''), COALESCE(keywords, ''), COALESCE(readme, '')
+    FROM packages;
   `);
+}
 
-  return db;
+function openOrCreateDatabase(): { db: DatabaseSync; incremental: boolean } {
+  if (isFullRebuild && existsSync(DB_PATH)) {
+    unlinkSync(DB_PATH);
+  }
+
+  const incremental = !isFullRebuild && existsSync(DB_PATH);
+  const db = new DatabaseSync(DB_PATH);
+  createSchema(db);
+  ensureFts(db);
+  return { db, incremental };
+}
+
+function getLastIndexedAt(db: DatabaseSync): number {
+  const row = db.prepare("SELECT value FROM metadata WHERE key = 'last_indexed_at'").get() as
+    | { value: string }
+    | undefined;
+  return row ? Number(row.value) : 0;
+}
+
+function setLastIndexedAt(db: DatabaseSync, timestamp: number) {
+  db.prepare("INSERT OR REPLACE INTO metadata (key, value) VALUES ('last_indexed_at', ?)").run(
+    String(timestamp),
+  );
+}
+
+// --- Package processing ---
+
+interface IndexStatements {
+  upsertPkg: ReturnType<DatabaseSync['prepare']>;
+  deleteDeps: ReturnType<DatabaseSync['prepare']>;
+  insertDep: ReturnType<DatabaseSync['prepare']>;
+  getPkgId: ReturnType<DatabaseSync['prepare']>;
+}
+
+function prepareStatements(db: DatabaseSync): IndexStatements {
+  return {
+    upsertPkg: db.prepare(`
+      INSERT INTO packages (name, version, description, keywords, readme, license, repository, homepage, author, has_build, file_count, total_size)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ON CONFLICT(name, version) DO UPDATE SET
+        description = excluded.description,
+        keywords = excluded.keywords,
+        readme = excluded.readme,
+        license = excluded.license,
+        repository = excluded.repository,
+        homepage = excluded.homepage,
+        author = excluded.author,
+        has_build = excluded.has_build,
+        file_count = excluded.file_count,
+        total_size = excluded.total_size,
+        indexed_at = datetime('now')
+    `),
+    deleteDeps: db.prepare('DELETE FROM dependencies WHERE package_id = ?'),
+    insertDep: db.prepare(
+      'INSERT INTO dependencies (package_id, dep_name, dep_version, dep_type) VALUES (?, ?, ?, ?)',
+    ),
+    getPkgId: db.prepare('SELECT id FROM packages WHERE name = ? AND version = ?'),
+  };
+}
+
+async function processPackage(
+  index: IndexFile,
+  storePath: string,
+  stmts: IndexStatements,
+): Promise<boolean> {
+  if (!index.name || !index.version || !index.files) return false;
+
+  // Resolve package.json from content store
+  const pkgJsonIntegrity = index.files['package.json']?.integrity;
+  let pkgJson: PackageJson = { name: index.name, version: index.version };
+
+  if (pkgJsonIntegrity) {
+    const content = await readStoreFile(storePath, pkgJsonIntegrity);
+    if (content) {
+      try {
+        pkgJson = JSON.parse(content);
+      } catch {
+        /* use defaults */
+      }
+    }
+  }
+
+  // Resolve README
+  let readme: string | null = null;
+  const readmeKey = Object.keys(index.files).find((k) => /^readme/i.test(k));
+  if (readmeKey) {
+    readme = await readStoreFile(storePath, index.files[readmeKey].integrity);
+    if (readme && readme.length > 50_000) {
+      readme = readme.slice(0, 50_000) + '\n\n[truncated]';
+    }
+  }
+
+  const fileCount = Object.keys(index.files).length;
+  const totalSize = Object.values(index.files).reduce((sum, f) => sum + (f.size || 0), 0);
+
+  // Upsert package
+  stmts.upsertPkg.run(
+    index.name,
+    index.version,
+    pkgJson.description ?? null,
+    pkgJson.keywords?.join(', ') ?? null,
+    readme,
+    normalizeLicense(pkgJson.license),
+    normalizeRepository(pkgJson.repository),
+    pkgJson.homepage ?? null,
+    normalizeAuthor(pkgJson.author),
+    index.requiresBuild ? 1 : 0,
+    fileCount,
+    totalSize,
+  );
+
+  const row = stmts.getPkgId.get(index.name, index.version) as { id: number } | undefined;
+  if (!row) return false;
+  const pkgId = row.id;
+
+  // Replace dependencies
+  stmts.deleteDeps.run(pkgId);
+  const depTypes: Array<[keyof PackageJson, string]> = [
+    ['dependencies', 'runtime'],
+    ['devDependencies', 'dev'],
+    ['peerDependencies', 'peer'],
+    ['optionalDependencies', 'optional'],
+  ];
+
+  for (const [field, type] of depTypes) {
+    const deps = pkgJson[field] as Record<string, string> | undefined;
+    if (!deps) continue;
+    for (const [depName, depVersion] of Object.entries(deps)) {
+      stmts.insertDep.run(pkgId, depName, depVersion, type);
+    }
+  }
+
+  return true;
 }
 
 // --- Main indexing ---
@@ -178,27 +326,24 @@ async function indexStore() {
     process.exit(1);
   }
 
-  const db = createDatabase();
-  log('Created SQLite database');
+  const { db, incremental } = openOrCreateDatabase();
+  const lastIndexedAt = incremental ? getLastIndexedAt(db) : 0;
+  const indexStartTime = Date.now();
 
-  // Prepare statements
-  const insertPkg = db.prepare(`
-    INSERT OR IGNORE INTO packages (name, version, description, keywords, readme, license, repository, homepage, author, has_build, file_count, total_size)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-  `);
+  if (incremental) {
+    log(`Incremental update (last indexed: ${new Date(lastIndexedAt).toISOString()})`);
+  } else {
+    log('Full rebuild');
+  }
 
-  const insertDep = db.prepare(`
-    INSERT INTO dependencies (package_id, dep_name, dep_version, dep_type)
-    VALUES (?, ?, ?, ?)
-  `);
-
-  const getPkgId = db.prepare(`SELECT id FROM packages WHERE name = ? AND version = ?`);
+  const stmts = prepareStatements(db);
 
   // Scan all 256 hash directories
   const hashDirs = await readdir(indexDir);
   let totalIndexed = 0;
   let totalSkipped = 0;
   let totalErrors = 0;
+  let totalUnchanged = 0;
 
   for (const hashDir of hashDirs) {
     const dirPath = resolve(indexDir, hashDir);
@@ -206,111 +351,49 @@ async function indexStore() {
     try {
       files = await readdir(dirPath);
     } catch {
-      continue; // not a directory
+      continue;
     }
 
     const jsonFiles = files.filter((f) => f.endsWith('.json'));
 
     for (const jsonFile of jsonFiles) {
       try {
-        const indexContent = await readFile(resolve(dirPath, jsonFile), 'utf-8');
+        const filePath = resolve(dirPath, jsonFile);
+
+        // Skip unchanged files in incremental mode
+        if (incremental && lastIndexedAt > 0) {
+          const fileStat = await stat(filePath);
+          if (fileStat.mtimeMs <= lastIndexedAt) {
+            totalUnchanged++;
+            continue;
+          }
+        }
+
+        const indexContent = await readFile(filePath, 'utf-8');
         const index: IndexFile = JSON.parse(indexContent);
 
-        if (!index.name || !index.version || !index.files) {
+        const ok = await processPackage(index, storePath, stmts);
+        if (ok) {
+          totalIndexed++;
+          if (totalIndexed % 500 === 0) {
+            log(`Indexed ${totalIndexed} packages...`);
+          }
+        } else {
           totalSkipped++;
-          continue;
         }
-
-        // Resolve package.json from content store
-        const pkgJsonIntegrity = index.files['package.json']?.integrity;
-        let pkgJson: PackageJson = { name: index.name, version: index.version };
-
-        if (pkgJsonIntegrity) {
-          const content = await readStoreFile(storePath, pkgJsonIntegrity);
-          if (content) {
-            try {
-              pkgJson = JSON.parse(content);
-            } catch {
-              /* use defaults */
-            }
-          }
-        }
-
-        // Resolve README
-        let readme: string | null = null;
-        const readmeKey = Object.keys(index.files).find((k) => /^readme/i.test(k));
-        if (readmeKey) {
-          readme = await readStoreFile(storePath, index.files[readmeKey].integrity);
-          // Truncate large READMEs to 50KB
-          if (readme && readme.length > 50_000) {
-            readme = readme.slice(0, 50_000) + '\n\n[truncated]';
-          }
-        }
-
-        // Calculate totals
-        const fileCount = Object.keys(index.files).length;
-        const totalSize = Object.values(index.files).reduce((sum, f) => sum + (f.size || 0), 0);
-
-        // Insert package
-        insertPkg.run(
-          index.name,
-          index.version,
-          pkgJson.description ?? null,
-          pkgJson.keywords?.join(', ') ?? null,
-          readme,
-          normalizeLicense(pkgJson.license),
-          normalizeRepository(pkgJson.repository),
-          pkgJson.homepage ?? null,
-          normalizeAuthor(pkgJson.author),
-          index.requiresBuild ? 1 : 0,
-          fileCount,
-          totalSize,
-        );
-
-        // Get the inserted package ID
-        const row = getPkgId.get(index.name, index.version) as { id: number } | undefined;
-        if (!row) {
-          totalSkipped++;
-          continue;
-        }
-        const pkgId = row.id;
-
-        // Insert dependencies
-        const depTypes: Array<[keyof PackageJson, string]> = [
-          ['dependencies', 'runtime'],
-          ['devDependencies', 'dev'],
-          ['peerDependencies', 'peer'],
-          ['optionalDependencies', 'optional'],
-        ];
-
-        for (const [field, type] of depTypes) {
-          const deps = pkgJson[field] as Record<string, string> | undefined;
-          if (!deps) continue;
-          for (const [depName, depVersion] of Object.entries(deps)) {
-            insertDep.run(pkgId, depName, depVersion, type);
-          }
-        }
-
-        totalIndexed++;
-        if (totalIndexed % 500 === 0) {
-          log(`Indexed ${totalIndexed} packages...`);
-        }
-      } catch (err) {
+      } catch {
         totalErrors++;
       }
     }
   }
 
-  // Populate FTS index
-  log('Building full-text search index...');
-  db.exec(`
-    INSERT INTO packages_fts(rowid, name, description, keywords, readme)
-    SELECT id, name, COALESCE(description, ''), COALESCE(keywords, ''), COALESCE(readme, '')
-    FROM packages
-  `);
+  // Rebuild FTS index (fast — ~1-2s for 10k rows)
+  log('Rebuilding full-text search index...');
+  rebuildFts(db);
 
-  // Load category mappings from generated/ files
+  // Load category mappings
   log('Loading category mappings...');
+  db.exec('DELETE FROM category_packages');
   const insertCat = db.prepare(`
     INSERT OR IGNORE INTO category_packages (package_id, category_slug, category_name, type)
     SELECT p.id, ?, ?, ?
@@ -331,22 +414,28 @@ async function indexStore() {
     }
   }
 
+  // Update last indexed timestamp
+  setLastIndexedAt(db, indexStartTime);
+
   // Print stats
   const stats = db
-    .prepare(`
-    SELECT
+    .prepare(
+      `SELECT
       (SELECT COUNT(*) FROM packages) as packages,
       (SELECT COUNT(*) FROM dependencies) as dependencies,
-      (SELECT COUNT(*) FROM category_packages) as categorized
-  `)
+      (SELECT COUNT(*) FROM category_packages) as categorized`,
+    )
     .get() as { packages: number; dependencies: number; categorized: number };
 
-  log(`Done!`);
-  log(`  Packages indexed: ${stats.packages}`);
-  log(`  Dependencies recorded: ${stats.dependencies}`);
+  log('Done!');
+  log(`  Mode: ${incremental ? 'incremental' : 'full rebuild'}`);
+  log(`  Packages indexed: ${totalIndexed}`);
+  if (incremental) log(`  Unchanged (skipped): ${totalUnchanged}`);
+  log(`  Total in database: ${stats.packages}`);
+  log(`  Dependencies: ${stats.dependencies}`);
   log(`  Category mappings: ${stats.categorized}`);
-  log(`  Skipped: ${totalSkipped}`);
-  log(`  Errors: ${totalErrors}`);
+  if (totalSkipped > 0) log(`  Skipped: ${totalSkipped}`);
+  if (totalErrors > 0) log(`  Errors: ${totalErrors}`);
   log(`  Database: ${DB_PATH}`);
 
   db.close();

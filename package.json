@@ -9,6 +9,7 @@
     "start": "node start.js",
     "serve": "npx tsx scripts/serve.ts",
     "index": "npx tsx scripts/index-store.ts",
+    "index:full": "npx tsx scripts/index-store.ts --full",
     "discover": "node scripts/discover.js",
     "fetch": "node scripts/fetch-all.js",
     "verify": "node scripts/verify.js",
