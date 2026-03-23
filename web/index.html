@@ -8,19 +8,29 @@
   </head>
   <body>
     <header>
-      <h1>Package Explorer</h1>
+      <h1 id="home-link">Package Explorer</h1>
       <div id="search-wrap">
-        <input type="text" id="search" placeholder="Search 552 packages…" autofocus />
+        <input type="text" id="search" placeholder="Search packages…" autofocus />
       </div>
     </header>
 
     <main>
       <section id="search-results" class="hidden"></section>
+
+      <section id="package-detail" class="hidden">
+        <nav id="breadcrumb"></nav>
+        <div id="pkg-header"></div>
+        <div id="pkg-readme"></div>
+        <div id="pkg-deps"></div>
+        <div id="pkg-dependents"></div>
+      </section>
+
       <section id="category-detail" class="hidden">
         <button id="back-btn">&larr; All categories</button>
         <h2 id="detail-title"></h2>
         <div id="detail-packages"></div>
       </section>
+
       <section id="categories">
         <div id="category-grid"></div>
       </section>
