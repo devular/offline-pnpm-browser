@@ -81,7 +81,7 @@ export const searchPackages = createServerFn({ method: 'GET' })
     const sanitized = q
       .trim()
       .split(/\s+/)
-      .map((term) => `"${term.replace(/"/g, '')}"`)
+      .map((term) => `"${term.replace(/"/g, '')}"*`)
       .join(' ');
 
     try {
