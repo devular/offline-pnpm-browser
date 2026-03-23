@@ -20,9 +20,14 @@ function HomePage() {
         <div className="home-hero">
           <h2 className="home-title">Browse {stats.unique_packages.toLocaleString()} packages</h2>
           <p className="home-subtitle">
-            {stats.total_dependencies.toLocaleString()} dependency relationships indexed from your
-            local pnpm store
+            Your local pnpm store, indexed and searchable. Browse READMEs, trace dependency graphs,
+            and install packages offline — all from cached data, no network required.
           </p>
+          <div className="home-stats">
+            <span>{stats.total_packages.toLocaleString()} versions</span>
+            <span>{stats.total_dependencies.toLocaleString()} dependencies</span>
+            <span>{stats.total_categorized} categorized</span>
+          </div>
         </div>
 
         <CategoryGrid categories={categories} />

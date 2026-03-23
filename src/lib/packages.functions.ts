@@ -228,6 +228,17 @@ export const getDependents = createServerFn({ method: 'GET' })
     return { package: name, count: rows.length, dependents: rows };
   });
 
+// --- Package versions ---
+
+export const getPackageVersions = createServerFn({ method: 'GET' })
+  .inputValidator((name: string) => name)
+  .handler(async ({ data: name }): Promise<Array<{ id: number; version: string }>> => {
+    const db = getDb();
+    return db
+      .prepare('SELECT id, version FROM packages WHERE name = ? ORDER BY id DESC')
+      .all(name) as Array<{ id: number; version: string }>;
+  });
+
 // --- DB stats ---
 
 export const getDbStats = createServerFn({ method: 'GET' }).handler(async (): Promise<DbStats> => {

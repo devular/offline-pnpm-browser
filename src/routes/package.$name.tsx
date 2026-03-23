@@ -1,19 +1,21 @@
-import { createFileRoute, Link } from '@tanstack/react-router';
-import { useState, useMemo } from 'react';
+import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
+import { useState, useMemo, useRef, useEffect } from 'react';
 import { marked, type MarkedExtension } from 'marked';
 import { highlight } from 'sugar-high';
-import { getPackageDetail, getDependents } from '../lib/packages.functions';
+import { getPackageDetail, getDependents, getPackageVersions } from '../lib/packages.functions';
 import type { DependentsResponse } from '../lib/packages.functions';
-import { Badge, Collapsible, DepItem } from '../components';
+import { Badge, Collapsible, CopyButton, DepItem } from '../components';
+import { useCopy } from '../hooks';
 
 export const Route = createFileRoute('/package/$name')({
   loader: async ({ params }) => {
-    const [pkg, dependents] = await Promise.all([
+    const [pkg, dependents, versions] = await Promise.all([
       getPackageDetail({ data: params.name }),
       getDependents({ data: params.name }),
+      getPackageVersions({ data: params.name }),
     ]);
     if (!pkg) throw new Error('Package not found');
-    return { pkg, dependents };
+    return { pkg, dependents, versions };
   },
   component: PackagePage,
 });
@@ -47,28 +49,63 @@ function repoHref(url: string): string {
   return url.replace(/^git\+/, '').replace(/\.git$/, '');
 }
 
+// --- Code blocks with copy ---
+
+function buildReadmeHtml(readme: string): string | null {
+  try {
+    let blockIndex = 0;
+    const renderer: MarkedExtension = {
+      renderer: {
+        code({ text, lang }) {
+          const highlighted = highlight(text);
+          const langLabel = lang ? `<span class="code-lang">${lang}</span>` : '';
+          const id = `code-block-${blockIndex++}`;
+          return `<pre class="sh-code" id="${id}">${langLabel}<code>${highlighted}</code><button class="copy-btn copy-btn-code" data-copy-target="${id}" aria-label="Copy code">Copy</button></pre>`;
+        },
+      },
+    };
+    return marked.use(renderer).parse(readme, { async: false }) as string;
+  } catch {
+    return null;
+  }
+}
+
 // --- Page ---
 
 function PackagePage() {
-  const { pkg, dependents } = Route.useLoaderData();
+  const { pkg, dependents, versions } = Route.useLoaderData();
+  const readmeRef = useRef<HTMLDivElement>(null);
 
   const readmeHtml = useMemo(() => {
     if (!pkg.readme) return null;
-    try {
-      const renderer: MarkedExtension = {
-        renderer: {
-          code({ text, lang }) {
-            const highlighted = highlight(text);
-            const langLabel = lang ? `<span class="code-lang">${lang}</span>` : '';
-            return `<pre class="sh-code">${langLabel}<code>${highlighted}</code></pre>`;
-          },
-        },
-      };
-      return marked.use(renderer).parse(pkg.readme, { async: false }) as string;
-    } catch {
-      return null;
-    }
+    return buildReadmeHtml(pkg.readme);
   }, [pkg.readme]);
+
+  // Attach copy handlers to code block buttons (event delegation)
+  useEffect(() => {
+    const el = readmeRef.current;
+    if (!el) return;
+    const handler = (e: MouseEvent) => {
+      const btn = (e.target as HTMLElement).closest('.copy-btn-code') as HTMLElement | null;
+      if (!btn) return;
+      const targetId = btn.dataset.copyTarget;
+      if (!targetId) return;
+      const pre = document.getElementById(targetId);
+      if (!pre) return;
+      const code = pre.querySelector('code');
+      if (!code) return;
+      navigator.clipboard.writeText(code.textContent ?? '').then(() => {
+        btn.textContent = 'Copied';
+        btn.classList.add('copy-btn-done');
+        setTimeout(() => {
+          btn.textContent = 'Copy';
+          btn.classList.remove('copy-btn-done');
+        }, 2000);
+      });
+    };
+    el.addEventListener('click', handler);
+    return () => el.removeEventListener('click', handler);
+  }, [readmeHtml]);
 
   const runtimeDepCount = pkg.dependencies.runtime.length;
   const peerDepCount = pkg.dependencies.peer.length;
@@ -81,7 +118,11 @@ function PackagePage() {
       <section className="pkg-identity">
         <div className="pkg-name-row">
           <h1 className="pkg-title">{pkg.name}</h1>
-          <span className="pkg-ver">{pkg.version}</span>
+          <VersionSelector
+            currentVersion={pkg.version}
+            versions={versions}
+            packageName={pkg.name}
+          />
           {pkg.license && <Badge variant="license">{pkg.license}</Badge>}
         </div>
         {pkg.description && <p className="pkg-desc-line">{pkg.description}</p>}
@@ -112,6 +153,9 @@ function PackagePage() {
           <span className="meta-item">{formatBytes(pkg.totalSize)}</span>
         </div>
 
+        {/* Install command */}
+        <InstallCommand name={pkg.name} version={pkg.version} />
+
         {(pkg.categories.length > 0 || pkg.keywords.length > 0) && (
           <div className="pkg-tags-row">
             {pkg.categories.map((cat) => (
@@ -134,7 +178,7 @@ function PackagePage() {
       </section>
 
       {readmeHtml && (
-        <section className="pkg-readme">
+        <section className="pkg-readme" ref={readmeRef}>
           <div className="readme-body" dangerouslySetInnerHTML={{ __html: readmeHtml }} />
         </section>
       )}
@@ -179,6 +223,64 @@ function PackagePage() {
     </main>
   );
 }
+
+// --- Install command ---
+
+function InstallCommand({ name, version }: { name: string; version: string }) {
+  const cmd = `pnpm add ${name}@${version} --offline`;
+  const { copy, copied } = useCopy();
+
+  return (
+    <div className="install-cmd" onClick={() => copy(cmd)}>
+      <code className="install-cmd-text">
+        <span className="install-cmd-prompt">$</span> {cmd}
+      </code>
+      <span className={`install-cmd-action ${copied ? 'install-cmd-copied' : ''}`}>
+        {copied ? 'Copied' : 'Click to copy'}
+      </span>
+    </div>
+  );
+}
+
+// --- Version selector ---
+
+function VersionSelector({
+  currentVersion,
+  versions,
+  packageName,
+}: {
+  currentVersion: string;
+  versions: Array<{ id: number; version: string }>;
+  packageName: string;
+}) {
+  if (versions.length <= 1) {
+    return <span className="pkg-ver">{currentVersion}</span>;
+  }
+
+  return (
+    <div className="version-select-wrap">
+      <select
+        className="version-select"
+        value={currentVersion}
+        onChange={(e) => {
+          // Navigate by reloading the page — the loader picks the latest version anyway
+          // For now just show the dropdown; full version switching would need a version param in the route
+          window.location.href = `/package/${encodeURIComponent(packageName)}`;
+        }}
+        aria-label="Package version"
+      >
+        {versions.map((v) => (
+          <option key={v.id} value={v.version}>
+            {v.version}
+          </option>
+        ))}
+      </select>
+      <span className="version-count">{versions.length} versions</span>
+    </div>
+  );
+}
+
+// --- Dep sections ---
 
 function DepsSection({
   title,
