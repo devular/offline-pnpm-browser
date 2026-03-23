@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from '@tanstack/react-router';
+import { createFileRoute, Link, notFound } from '@tanstack/react-router';
 import { useMemo, useRef, useEffect } from 'react';
 import { marked, type MarkedExtension } from 'marked';
 import { highlight } from 'sugar-high';
@@ -22,7 +22,7 @@ export const Route = createFileRoute('/package/$name')({
       getDependents({ data: params.name }),
       getPackageVersions({ data: params.name }),
     ]);
-    if (!pkg) throw new Error('Package not found');
+    if (!pkg) throw notFound();
     return { pkg, dependents, versions };
   },
   component: PackagePage,

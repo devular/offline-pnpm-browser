@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { searchPackages } from '@root/lib/packages.functions';
 import type { SearchResponse } from '@root/lib/packages.functions';
 import { RootDocument } from '@root/components/RootDocument';
+import { NotFound } from '@root/components/NotFound';
 import appCss from '@root/styles/global.css?url';
 
 export const Route = createRootRoute({
@@ -29,6 +30,7 @@ export const Route = createRootRoute({
   }),
   shellComponent: RootDocument,
   component: RootLayout,
+  notFoundComponent: NotFound,
 });
 
 function highlightMatch(text: string, query: string) {

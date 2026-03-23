@@ -1,11 +1,11 @@
-import { createFileRoute, Link } from '@tanstack/react-router';
+import { createFileRoute, Link, notFound } from '@tanstack/react-router';
 import { getCategoryDetail } from '@root/lib/packages.functions';
 import { PackageSection } from '@root/components/PackageSection';
 
 export const Route = createFileRoute('/category/$slug')({
   loader: async ({ params }) => {
     const category = await getCategoryDetail({ data: params.slug });
-    if (!category) throw new Error('Category not found');
+    if (!category) throw notFound();
     return category;
   },
   component: CategoryPage,
