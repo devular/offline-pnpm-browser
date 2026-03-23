@@ -18,14 +18,6 @@ export const Route = createFileRoute('/package/$name')({
 
 // --- Helpers ---
 
-function cleanRepoUrl(url: string): string {
-  return url
-    .replace(/^git\+/, '')
-    .replace(/\.git$/, '')
-    .replace(/^https?:\/\//, '')
-    .replace(/^github\.com\//, '');
-}
-
 function cleanAuthor(author: string): string {
   return author
     .replace(/<[^>]+>/g, '')
@@ -53,7 +45,7 @@ function repoHref(url: string): string {
   return url.replace(/^git\+/, '').replace(/\.git$/, '');
 }
 
-// --- Components ---
+// --- Page ---
 
 function PackagePage() {
   const { pkg, dependents } = Route.useLoaderData();
@@ -67,20 +59,63 @@ function PackagePage() {
     }
   }, [pkg.readme]);
 
+  const runtimeDepCount = pkg.dependencies.runtime.length;
+  const peerDepCount = pkg.dependencies.peer.length;
+  const devDepCount = pkg.dependencies.dev.length;
+  const optionalDepCount = pkg.dependencies.optional.length;
+  const totalDeps = runtimeDepCount + peerDepCount + devDepCount + optionalDepCount;
+
   return (
-    <div className="app">
-      <header className="pkg-page-header">
-        <Link to="/" className="back-link">
-          &larr; Back
-        </Link>
-        <div className="pkg-header">
-          <h1>{pkg.name}</h1>
-          <span className="pkg-version">{pkg.version}</span>
+    <main className="pkg-page">
+      {/* === Package identity === */}
+      <section className="pkg-identity">
+        <div className="pkg-name-row">
+          <h1 className="pkg-title">{pkg.name}</h1>
+          <span className="pkg-ver">{pkg.version}</span>
           {pkg.license && <span className="badge badge-license">{pkg.license}</span>}
         </div>
-        {pkg.description && <p className="pkg-description">{pkg.description}</p>}
-        {pkg.keywords.length > 0 && (
-          <div className="pkg-keywords-inline">
+        {pkg.description && <p className="pkg-desc-line">{pkg.description}</p>}
+
+        {/* Compact meta row */}
+        <div className="pkg-meta-row">
+          {pkg.author && <span className="meta-item">{cleanAuthor(pkg.author)}</span>}
+          {pkg.repository && (
+            <a
+              href={repoHref(pkg.repository)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="meta-item meta-item-link"
+            >
+              {repoDisplayUrl(pkg.repository)}
+            </a>
+          )}
+          {pkg.homepage && (
+            <a
+              href={pkg.homepage}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="meta-item meta-item-link"
+            >
+              {pkg.homepage.replace(/^https?:\/\//, '').replace(/\/$/, '')}
+            </a>
+          )}
+          <span className="meta-item">{pkg.fileCount} files</span>
+          <span className="meta-item">{formatBytes(pkg.totalSize)}</span>
+        </div>
+
+        {/* Tags row: categories + keywords */}
+        {(pkg.categories.length > 0 || pkg.keywords.length > 0) && (
+          <div className="pkg-tags-row">
+            {pkg.categories.map((cat) => (
+              <Link
+                key={cat.category_slug}
+                to="/category/$slug"
+                params={{ slug: cat.category_slug }}
+                className={`badge badge-${cat.type}`}
+              >
+                {cat.category_name}
+              </Link>
+            ))}
             {pkg.keywords.map((kw) => (
               <span key={kw} className="badge badge-keyword">
                 {kw}
@@ -88,101 +123,54 @@ function PackagePage() {
             ))}
           </div>
         )}
-      </header>
+      </section>
 
-      <main>
-        <div className="pkg-meta-grid">
-          <MetaCard label="Files" value={pkg.fileCount.toString()} />
-          <MetaCard label="Size" value={formatBytes(pkg.totalSize)} />
-          {pkg.author && <MetaCard label="Author" value={cleanAuthor(pkg.author)} />}
-          {pkg.homepage && <MetaCard label="Homepage" value={pkg.homepage} isLink />}
-          {pkg.repository && (
-            <MetaCard
-              label="Repository"
-              value={repoDisplayUrl(pkg.repository)}
-              href={repoHref(pkg.repository)}
-              isLink
-            />
-          )}
-        </div>
-
-        {pkg.categories.length > 0 && (
-          <section className="pkg-detail-section">
-            <h3>Categories</h3>
-            <div className="badge-list">
-              {pkg.categories.map((cat) => (
-                <Link
-                  key={cat.category_slug}
-                  to="/category/$slug"
-                  params={{ slug: cat.category_slug }}
-                  className={`badge badge-${cat.type}`}
-                >
-                  {cat.category_name}
-                </Link>
-              ))}
-            </div>
-          </section>
-        )}
-
-        <DepsSection title="Dependencies" deps={pkg.dependencies.runtime} defaultOpen />
-        <DepsSection title="Peer Dependencies" deps={pkg.dependencies.peer} defaultOpen />
-        <DepsSection
-          title="Dev Dependencies"
-          deps={pkg.dependencies.dev}
-          defaultOpen={pkg.dependencies.dev.length <= 10}
-        />
-        <DepsSection
-          title="Optional Dependencies"
-          deps={pkg.dependencies.optional}
-          defaultOpen={pkg.dependencies.optional.length <= 10}
-        />
-
-        <CollapsibleDependents dependents={dependents} />
-
-        {readmeHtml && (
-          <section className="pkg-detail-section readme-section">
-            <h3>README</h3>
-            <div className="readme-content" dangerouslySetInnerHTML={{ __html: readmeHtml }} />
-          </section>
-        )}
-        {pkg.readme && !readmeHtml && (
-          <section className="pkg-detail-section readme-section">
-            <h3>README</h3>
-            <pre className="readme-content readme-raw">{pkg.readme}</pre>
-          </section>
-        )}
-      </main>
-    </div>
-  );
-}
-
-function MetaCard({
-  label,
-  value,
-  isLink,
-  href,
-}: {
-  label: string;
-  value: string;
-  isLink?: boolean;
-  href?: string;
-}) {
-  return (
-    <div className="meta-card">
-      <span className="meta-label">{label}</span>
-      {isLink ? (
-        <a
-          href={href ?? value}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="meta-value meta-link"
-        >
-          {value.replace(/^https?:\/\//, '').slice(0, 50)}
-        </a>
-      ) : (
-        <span className="meta-value">{value}</span>
+      {/* === README — the hero content === */}
+      {readmeHtml && (
+        <section className="pkg-readme">
+          <div className="readme-body" dangerouslySetInnerHTML={{ __html: readmeHtml }} />
+        </section>
       )}
-    </div>
+      {pkg.readme && !readmeHtml && (
+        <section className="pkg-readme">
+          <pre className="readme-body readme-raw">{pkg.readme}</pre>
+        </section>
+      )}
+
+      {/* === Dependencies & Dependents === */}
+      {(totalDeps > 0 || dependents.count > 0) && (
+        <section className="pkg-graph">
+          <h2 className="pkg-graph-title">Dependency Graph</h2>
+
+          <div className="pkg-graph-summary">
+            {runtimeDepCount > 0 && <span className="graph-stat">{runtimeDepCount} deps</span>}
+            {peerDepCount > 0 && <span className="graph-stat">{peerDepCount} peer</span>}
+            {devDepCount > 0 && <span className="graph-stat">{devDepCount} dev</span>}
+            {optionalDepCount > 0 && (
+              <span className="graph-stat">{optionalDepCount} optional</span>
+            )}
+            {dependents.count > 0 && (
+              <span className="graph-stat graph-stat-accent">{dependents.count} dependents</span>
+            )}
+          </div>
+
+          <DepsSection title="Dependencies" deps={pkg.dependencies.runtime} defaultOpen />
+          <DepsSection title="Peer Dependencies" deps={pkg.dependencies.peer} defaultOpen />
+          <DepsSection
+            title="Dev Dependencies"
+            deps={pkg.dependencies.dev}
+            defaultOpen={devDepCount <= 10}
+          />
+          <DepsSection
+            title="Optional Dependencies"
+            deps={pkg.dependencies.optional}
+            defaultOpen={optionalDepCount <= 10}
+          />
+
+          <CollapsibleDependents dependents={dependents} />
+        </section>
+      )}
+    </main>
   );
 }
 
@@ -200,7 +188,7 @@ function DepsSection({
   if (deps.length === 0) return null;
 
   return (
-    <section className="pkg-detail-section">
+    <div className="deps-group">
       <h3 className="section-toggle" onClick={() => setIsOpen(!isOpen)}>
         <span className={`toggle-arrow ${isOpen ? 'open' : ''}`}>&#9654;</span>
         {title} ({deps.length})
@@ -220,7 +208,7 @@ function DepsSection({
           ))}
         </div>
       )}
-    </section>
+    </div>
   );
 }
 
@@ -233,7 +221,7 @@ function CollapsibleDependents({ dependents }: { dependents: DependentsResponse 
   const visible = showAll ? dependents.dependents : dependents.dependents.slice(0, 20);
 
   return (
-    <section className="pkg-detail-section">
+    <div className="deps-group">
       <h3 className="section-toggle" onClick={() => setIsOpen(!isOpen)}>
         <span className={`toggle-arrow ${isOpen ? 'open' : ''}`}>&#9654;</span>
         Dependents ({dependents.count})
@@ -259,6 +247,6 @@ function CollapsibleDependents({ dependents }: { dependents: DependentsResponse 
           )}
         </div>
       )}
-    </section>
+    </div>
   );
 }

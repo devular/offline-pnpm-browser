@@ -14,24 +14,23 @@ function CategoryPage() {
   const category = Route.useLoaderData();
 
   return (
-    <div className="app">
-      <header>
-        <Link to="/" className="back-link">
-          &larr; All categories
+    <main className="page-content">
+      <div className="page-title-row">
+        <Link to="/" className="breadcrumb-link">
+          Categories
         </Link>
-        <h1>{category.name}</h1>
-        <p className="subtitle">{category.totalCount} packages</p>
-      </header>
+        <span className="breadcrumb-sep">/</span>
+        <h1 className="page-title">{category.name}</h1>
+        <span className="page-count">{category.totalCount} packages</span>
+      </div>
 
-      <main>
-        {category.curated.length > 0 && (
-          <PackageSection title="Curated" packages={category.curated} type="curated" />
-        )}
-        {category.discovered.length > 0 && (
-          <PackageSection title="Discovered" packages={category.discovered} type="discovered" />
-        )}
-      </main>
-    </div>
+      {category.curated.length > 0 && (
+        <PackageSection title="Curated" packages={category.curated} type="curated" />
+      )}
+      {category.discovered.length > 0 && (
+        <PackageSection title="Discovered" packages={category.discovered} type="discovered" />
+      )}
+    </main>
   );
 }
 

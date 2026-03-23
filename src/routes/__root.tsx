@@ -1,6 +1,15 @@
 /// <reference types="vite/client" />
-import { createRootRoute, HeadContent, Scripts } from '@tanstack/react-router';
-import type { ReactNode } from 'react';
+import {
+  createRootRoute,
+  HeadContent,
+  Link,
+  Outlet,
+  Scripts,
+  useNavigate,
+} from '@tanstack/react-router';
+import { useCallback, useRef, useState, type ReactNode } from 'react';
+import { searchPackages } from '../lib/packages.functions';
+import type { SearchResponse } from '../lib/packages.functions';
 import appCss from '../styles/global.css?url';
 
 export const Route = createRootRoute({
@@ -13,6 +22,7 @@ export const Route = createRootRoute({
     links: [{ rel: 'stylesheet', href: appCss }],
   }),
   shellComponent: RootDocument,
+  component: RootLayout,
 });
 
 function RootDocument({ children }: { children: ReactNode }) {
@@ -26,5 +36,103 @@ function RootDocument({ children }: { children: ReactNode }) {
         <Scripts />
       </body>
     </html>
+  );
+}
+
+function RootLayout() {
+  const navigate = useNavigate();
+  const [searchResults, setSearchResults] = useState<SearchResponse | null>(null);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const debounceRef = useRef<ReturnType<typeof setTimeout>>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const handleSearch = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const q = e.target.value.trim();
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+
+    if (!q) {
+      setSearchResults(null);
+      setIsSearchOpen(false);
+      return;
+    }
+
+    setIsSearchOpen(true);
+    debounceRef.current = setTimeout(async () => {
+      const results = await searchPackages({ data: { q, limit: 8 } });
+      setSearchResults(results);
+    }, 150);
+  }, []);
+
+  const handleResultClick = useCallback(() => {
+    setSearchResults(null);
+    setIsSearchOpen(false);
+    if (inputRef.current) inputRef.current.value = '';
+  }, []);
+
+  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
+    if (e.key === 'Escape') {
+      setSearchResults(null);
+      setIsSearchOpen(false);
+      if (inputRef.current) inputRef.current.blur();
+    }
+  }, []);
+
+  return (
+    <div className="app">
+      <nav className="site-header">
+        <div className="site-header-inner">
+          <Link to="/" className="site-logo" onClick={handleResultClick}>
+            Package Explorer
+          </Link>
+          <div className="header-search-wrap">
+            <input
+              ref={inputRef}
+              type="text"
+              className="header-search-input"
+              placeholder="Search packages..."
+              onChange={handleSearch}
+              onKeyDown={handleKeyDown}
+              onFocus={(e) => {
+                if (e.target.value.trim()) setIsSearchOpen(true);
+              }}
+            />
+            {isSearchOpen && searchResults && (
+              <div className="search-dropdown">
+                {searchResults.count === 0 ? (
+                  <div className="search-dropdown-empty">No results</div>
+                ) : (
+                  <>
+                    {searchResults.results.map((pkg) => (
+                      <Link
+                        key={`${pkg.name}-${pkg.id}`}
+                        to="/package/$name"
+                        params={{ name: pkg.name }}
+                        className="search-dropdown-item"
+                        onClick={handleResultClick}
+                      >
+                        <span className="search-dropdown-name">{pkg.name}</span>
+                        <span className="search-dropdown-ver">{pkg.version}</span>
+                        {pkg.description && (
+                          <span className="search-dropdown-desc">{pkg.description}</span>
+                        )}
+                      </Link>
+                    ))}
+                    {searchResults.count > 8 && (
+                      <div className="search-dropdown-more">
+                        {searchResults.count - 8} more results
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+      </nav>
+
+      {isSearchOpen && <div className="search-overlay" onClick={handleResultClick} />}
+
+      <Outlet />
+    </div>
   );
 }
