@@ -2,6 +2,7 @@ import { createServerFn } from '@tanstack/react-start';
 import { readFile, readdir } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
+import Fuse from 'fuse.js';
 import {
   getDb,
   getGeneratedPath,
@@ -12,6 +13,37 @@ import {
   type SearchResult,
   type DbStats,
 } from './db.server';
+
+// --- Fuzzy search index (lazy-initialized) ---
+
+interface FusePackage {
+  id: number;
+  name: string;
+  version: string;
+  description: string | null;
+  keywords: string | null;
+  license: string | null;
+}
+
+let _fuse: Fuse<FusePackage> | null = null;
+
+function getFuse(): Fuse<FusePackage> {
+  if (_fuse) return _fuse;
+  const db = getDb();
+  const rows = db
+    .prepare('SELECT id, name, version, description, keywords, license FROM packages')
+    .all() as unknown as FusePackage[];
+  _fuse = new Fuse(rows, {
+    keys: [
+      { name: 'name', weight: 3 },
+      { name: 'description', weight: 1 },
+      { name: 'keywords', weight: 1.5 },
+    ],
+    threshold: 0.4,
+    includeScore: true,
+  });
+  return _fuse;
+}
 
 // --- Categories (from generated JSON) ---
 
@@ -84,6 +116,16 @@ export const searchPackages = createServerFn({ method: 'GET' })
       .map((term) => `"${term.replace(/"/g, '')}"*`)
       .join(' ');
 
+    const formatRow = (r: SearchResult | FusePackage) => ({
+      id: r.id,
+      name: r.name,
+      version: r.version,
+      description: r.description,
+      keywords: (r.keywords ?? '').split(', ').filter(Boolean),
+      license: r.license,
+    });
+
+    // 1. Try FTS5 prefix search
     try {
       const rows = db
         .prepare(
@@ -96,40 +138,22 @@ export const searchPackages = createServerFn({ method: 'GET' })
         )
         .all(sanitized, limit) as unknown as SearchResult[];
 
-      return {
-        query: q,
-        count: rows.length,
-        results: rows.map((r) => ({
-          id: r.id,
-          name: r.name,
-          version: r.version,
-          description: r.description,
-          keywords: r.keywords?.split(', ').filter(Boolean) ?? [],
-          license: r.license,
-        })),
-      };
+      if (rows.length > 0) {
+        return { query: q, count: rows.length, results: rows.map(formatRow) };
+      }
     } catch {
-      const rows = db
-        .prepare(
-          `SELECT id, name, version, description, keywords, license
-         FROM packages WHERE name LIKE ? OR description LIKE ?
-         ORDER BY name LIMIT ?`,
-        )
-        .all(`%${q}%`, `%${q}%`, limit) as unknown as SearchResult[];
-
-      return {
-        query: q,
-        count: rows.length,
-        results: rows.map((r) => ({
-          id: r.id,
-          name: r.name,
-          version: r.version,
-          description: r.description,
-          keywords: r.keywords?.split(', ').filter(Boolean) ?? [],
-          license: r.license,
-        })),
-      };
+      // FTS5 syntax error — fall through to fuzzy
     }
+
+    // 2. Fuzzy fallback via Fuse.js
+    const fuse = getFuse();
+    const fuzzyResults = fuse.search(q, { limit });
+
+    return {
+      query: q,
+      count: fuzzyResults.length,
+      results: fuzzyResults.map((r) => formatRow(r.item)),
+    };
   });
 
 // --- Package detail ---
