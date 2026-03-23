@@ -51,12 +51,27 @@ function RootDocument({ children }: { children: ReactNode }) {
   );
 }
 
+function highlightMatch(text: string, query: string) {
+  if (!query) return text;
+  const idx = text.toLowerCase().indexOf(query.toLowerCase());
+  if (idx === -1) return text;
+  return (
+    <>
+      {text.slice(0, idx)}
+      <mark className="search-match">{text.slice(idx, idx + query.length)}</mark>
+      {text.slice(idx + query.length)}
+    </>
+  );
+}
+
 function RootLayout() {
   const navigate = useNavigate();
   const [searchResults, setSearchResults] = useState<SearchResponse | null>(null);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [activeIndex, setActiveIndex] = useState(-1);
   const debounceRef = useRef<ReturnType<typeof setTimeout>>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const queryRef = useRef('');
 
   // / key focuses search from anywhere
   useEffect(() => {
@@ -81,11 +96,13 @@ function RootLayout() {
 
   const handleSearch = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const q = e.target.value.trim();
+    queryRef.current = q;
     if (debounceRef.current) clearTimeout(debounceRef.current);
 
     if (!q) {
       setSearchResults(null);
       setIsSearchOpen(false);
+      setActiveIndex(-1);
       return;
     }
 
@@ -93,31 +110,74 @@ function RootLayout() {
     debounceRef.current = setTimeout(async () => {
       const results = await searchPackages({ data: { q, limit: 8 } });
       setSearchResults(results);
+      setActiveIndex(-1);
     }, 150);
   }, []);
 
-  const handleResultClick = useCallback(() => {
+  const dismiss = useCallback(() => {
     setSearchResults(null);
     setIsSearchOpen(false);
+    setActiveIndex(-1);
     if (inputRef.current) inputRef.current.value = '';
+    queryRef.current = '';
   }, []);
 
-  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
-    if (e.key === 'Escape') {
-      setSearchResults(null);
-      setIsSearchOpen(false);
-      if (inputRef.current) inputRef.current.blur();
-    }
-  }, []);
+  const selectResult = useCallback(
+    (name: string) => {
+      dismiss();
+      navigate({ to: '/package/$name', params: { name } });
+    },
+    [dismiss, navigate],
+  );
+
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      const results = searchResults?.results;
+      if (!results?.length) {
+        if (e.key === 'Escape') {
+          dismiss();
+          inputRef.current?.blur();
+        }
+        return;
+      }
+
+      switch (e.key) {
+        case 'ArrowDown':
+          e.preventDefault();
+          setActiveIndex((prev) => (prev < results.length - 1 ? prev + 1 : 0));
+          break;
+        case 'ArrowUp':
+          e.preventDefault();
+          setActiveIndex((prev) => (prev > 0 ? prev - 1 : results.length - 1));
+          break;
+        case 'Enter':
+          e.preventDefault();
+          if (activeIndex >= 0 && activeIndex < results.length) {
+            selectResult(results[activeIndex].name);
+          }
+          break;
+        case 'Escape':
+          dismiss();
+          inputRef.current?.blur();
+          break;
+      }
+    },
+    [searchResults, activeIndex, dismiss, selectResult],
+  );
 
   return (
     <div className="app">
       <nav className="site-header">
         <div className="site-header-inner">
-          <Link to="/" className="site-logo" onClick={handleResultClick}>
+          <Link to="/" className="site-logo" onClick={dismiss}>
             Package Explorer
           </Link>
-          <div className="header-search-wrap">
+          <div
+            className="header-search-wrap"
+            role="combobox"
+            aria-expanded={isSearchOpen}
+            aria-haspopup="listbox"
+          >
             <input
               ref={inputRef}
               type="text"
@@ -128,22 +188,30 @@ function RootLayout() {
               onFocus={(e) => {
                 if (e.target.value.trim()) setIsSearchOpen(true);
               }}
+              role="searchbox"
+              aria-autocomplete="list"
+              aria-activedescendant={activeIndex >= 0 ? `search-result-${activeIndex}` : undefined}
             />
             {isSearchOpen && searchResults && (
-              <div className="search-dropdown">
+              <div className="search-dropdown" role="listbox">
                 {searchResults.count === 0 ? (
                   <div className="search-dropdown-empty">No results</div>
                 ) : (
                   <>
-                    {searchResults.results.map((pkg) => (
+                    {searchResults.results.map((pkg, i) => (
                       <Link
                         key={`${pkg.name}-${pkg.id}`}
+                        id={`search-result-${i}`}
                         to="/package/$name"
                         params={{ name: pkg.name }}
-                        className="search-dropdown-item"
-                        onClick={handleResultClick}
+                        className={`search-dropdown-item ${i === activeIndex ? 'search-dropdown-active' : ''}`}
+                        onClick={dismiss}
+                        role="option"
+                        aria-selected={i === activeIndex}
                       >
-                        <span className="search-dropdown-name">{pkg.name}</span>
+                        <span className="search-dropdown-name">
+                          {highlightMatch(pkg.name, queryRef.current)}
+                        </span>
                         <span className="search-dropdown-ver">{pkg.version}</span>
                         {pkg.description && (
                           <span className="search-dropdown-desc">{pkg.description}</span>
@@ -152,9 +220,15 @@ function RootLayout() {
                     ))}
                     {searchResults.count > 8 && (
                       <div className="search-dropdown-more">
-                        {searchResults.count - 8} more results
+                        {searchResults.count - 8} more results &middot; refine your search
                       </div>
                     )}
+                    <div className="search-dropdown-hint">
+                      <kbd>&uarr;</kbd>
+                      <kbd>&darr;</kbd> navigate
+                      <kbd>&crarr;</kbd> select
+                      <kbd>esc</kbd> close
+                    </div>
                   </>
                 )}
               </div>
@@ -163,7 +237,7 @@ function RootLayout() {
         </div>
       </nav>
 
-      {isSearchOpen && <div className="search-overlay" onClick={handleResultClick} />}
+      {isSearchOpen && <div className="search-overlay" onClick={dismiss} />}
 
       <Outlet />
     </div>
