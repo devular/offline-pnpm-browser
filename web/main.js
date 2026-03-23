@@ -141,6 +141,6 @@ async function loadStatus() {
     const data = await res.json();
     statusBar.textContent = `${data.success} cached · ${data.failed} failed · ${data.total} total`;
   } catch {
-    statusBar.textContent = 'offline-setup';
+    statusBar.textContent = 'Offline PNPM Browser';
   }
 }

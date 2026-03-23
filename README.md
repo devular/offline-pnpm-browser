@@ -1,8 +1,8 @@
-# offline-setup
+# Offline PNPM Browser
 
 Browse and search your local pnpm store — entirely offline.
 
-**offline-setup** indexes npm packages cached in your local pnpm store into a searchable SQLite database with full-text search. Explore ~10,000 packages by category, read READMEs, inspect dependency graphs, and copy install commands — no network required.
+**Offline PNPM Browser** indexes npm packages cached in your local pnpm store into a searchable SQLite database with full-text search. Explore ~10,000 packages by category, read READMEs, inspect dependency graphs, and copy install commands — no network required.
 
 ## Features
 

@@ -1,5 +1,5 @@
 {
-  "name": "offline-setup",
+  "name": "offline-pnpm-browser",
   "version": "1.0.0",
   "private": true,
   "type": "module",
