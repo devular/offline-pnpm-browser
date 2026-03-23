@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from '@tanstack/react-router';
 import { getCategoryDetail } from '../lib/packages.functions';
+import { Badge } from '../components';
 
 export const Route = createFileRoute('/category/$slug')({
   loader: async ({ params }) => {
@@ -50,7 +51,7 @@ function PackageSection({
       </h4>
       {packages.map((name) => (
         <Link key={name} to="/package/$name" params={{ name }} className="pkg-item">
-          <span className={`badge badge-${type}`}>{type}</span>
+          <Badge variant={type as 'curated' | 'discovered'}>{type}</Badge>
           <span className="pkg-name">{name}</span>
         </Link>
       ))}

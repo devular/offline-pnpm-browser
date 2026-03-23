@@ -3,6 +3,7 @@ import { useState, useMemo } from 'react';
 import { marked } from 'marked';
 import { getPackageDetail, getDependents } from '../lib/packages.functions';
 import type { DependentsResponse } from '../lib/packages.functions';
+import { Badge, Collapsible, DepItem } from '../components';
 
 export const Route = createFileRoute('/package/$name')({
   loader: async ({ params }) => {
@@ -67,16 +68,14 @@ function PackagePage() {
 
   return (
     <main className="pkg-page">
-      {/* === Package identity === */}
       <section className="pkg-identity">
         <div className="pkg-name-row">
           <h1 className="pkg-title">{pkg.name}</h1>
           <span className="pkg-ver">{pkg.version}</span>
-          {pkg.license && <span className="badge badge-license">{pkg.license}</span>}
+          {pkg.license && <Badge variant="license">{pkg.license}</Badge>}
         </div>
         {pkg.description && <p className="pkg-desc-line">{pkg.description}</p>}
 
-        {/* Compact meta row */}
         <div className="pkg-meta-row">
           {pkg.author && <span className="meta-item">{cleanAuthor(pkg.author)}</span>}
           {pkg.repository && (
@@ -103,7 +102,6 @@ function PackagePage() {
           <span className="meta-item">{formatBytes(pkg.totalSize)}</span>
         </div>
 
-        {/* Tags row: categories + keywords */}
         {(pkg.categories.length > 0 || pkg.keywords.length > 0) && (
           <div className="pkg-tags-row">
             {pkg.categories.map((cat) => (
@@ -117,15 +115,14 @@ function PackagePage() {
               </Link>
             ))}
             {pkg.keywords.map((kw) => (
-              <span key={kw} className="badge badge-keyword">
+              <Badge key={kw} variant="keyword">
                 {kw}
-              </span>
+              </Badge>
             ))}
           </div>
         )}
       </section>
 
-      {/* === README — the hero content === */}
       {readmeHtml && (
         <section className="pkg-readme">
           <div className="readme-body" dangerouslySetInnerHTML={{ __html: readmeHtml }} />
@@ -137,7 +134,6 @@ function PackagePage() {
         </section>
       )}
 
-      {/* === Dependencies & Dependents === */}
       {(totalDeps > 0 || dependents.count > 0) && (
         <section className="pkg-graph">
           <h2 className="pkg-graph-title">Dependency Graph</h2>
@@ -183,37 +179,20 @@ function DepsSection({
   deps: Array<{ dep_name: string; dep_version: string }>;
   defaultOpen?: boolean;
 }) {
-  const [isOpen, setIsOpen] = useState(defaultOpen);
-
   if (deps.length === 0) return null;
 
   return (
-    <div className="deps-group">
-      <h3 className="section-toggle" onClick={() => setIsOpen(!isOpen)}>
-        <span className={`toggle-arrow ${isOpen ? 'open' : ''}`}>&#9654;</span>
-        {title} ({deps.length})
-      </h3>
-      {isOpen && (
-        <div className="dep-list">
-          {deps.map((dep) => (
-            <Link
-              key={dep.dep_name}
-              to="/package/$name"
-              params={{ name: dep.dep_name }}
-              className="dep-item"
-            >
-              <span className="dep-name">{dep.dep_name}</span>
-              <span className="dep-version">{dep.dep_version}</span>
-            </Link>
-          ))}
-        </div>
-      )}
-    </div>
+    <Collapsible title={title} count={deps.length} defaultOpen={defaultOpen}>
+      <div className="dep-list">
+        {deps.map((dep) => (
+          <DepItem key={dep.dep_name} name={dep.dep_name} version={dep.dep_version} />
+        ))}
+      </div>
+    </Collapsible>
   );
 }
 
 function CollapsibleDependents({ dependents }: { dependents: DependentsResponse }) {
-  const [isOpen, setIsOpen] = useState(dependents.count <= 15);
   const [showAll, setShowAll] = useState(false);
 
   if (dependents.count === 0) return null;
@@ -221,32 +200,22 @@ function CollapsibleDependents({ dependents }: { dependents: DependentsResponse 
   const visible = showAll ? dependents.dependents : dependents.dependents.slice(0, 20);
 
   return (
-    <div className="deps-group">
-      <h3 className="section-toggle" onClick={() => setIsOpen(!isOpen)}>
-        <span className={`toggle-arrow ${isOpen ? 'open' : ''}`}>&#9654;</span>
-        Dependents ({dependents.count})
-      </h3>
-      {isOpen && (
-        <div className="dep-list">
-          {visible.map((dep, i) => (
-            <Link
-              key={`${dep.name}-${i}`}
-              to="/package/$name"
-              params={{ name: dep.name }}
-              className="dep-item"
-            >
-              <span className="dep-name">{dep.name}</span>
-              <span className="dep-version">{dep.dep_version}</span>
-              <span className="badge badge-dep-type">{dep.dep_type}</span>
-            </Link>
-          ))}
-          {!showAll && dependents.dependents.length > 20 && (
-            <button className="show-more-btn" onClick={() => setShowAll(true)}>
-              Show all {dependents.count} dependents
-            </button>
-          )}
-        </div>
-      )}
-    </div>
+    <Collapsible title="Dependents" count={dependents.count} defaultOpen={dependents.count <= 15}>
+      <div className="dep-list">
+        {visible.map((dep, i) => (
+          <DepItem
+            key={`${dep.name}-${i}`}
+            name={dep.name}
+            version={dep.dep_version}
+            type={dep.dep_type}
+          />
+        ))}
+        {!showAll && dependents.dependents.length > 20 && (
+          <button className="show-more-btn" onClick={() => setShowAll(true)}>
+            Show all {dependents.count} dependents
+          </button>
+        )}
+      </div>
+    </Collapsible>
   );
 }
