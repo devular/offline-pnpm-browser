@@ -1,10 +1,8 @@
 import { DatabaseSync } from 'node:sqlite';
 import { existsSync } from 'node:fs';
-import { resolve, dirname } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { resolve } from 'node:path';
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
-const ROOT = resolve(__dirname, '../..');
+const ROOT = process.cwd();
 const DB_PATH = resolve(ROOT, 'packages.db');
 const GENERATED = resolve(ROOT, 'generated');
 
