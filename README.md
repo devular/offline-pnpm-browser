@@ -70,7 +70,6 @@ After install, the server is available at:
 http://localhost:54321
 ```
 
-If you have Tailscale running, the script will also print your Tailscale URL.
 
 ### Environment variables
 
