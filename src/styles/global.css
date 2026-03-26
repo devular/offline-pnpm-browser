@@ -790,14 +790,15 @@ a {
 
 /* Copy button inside code blocks */
 .copy-btn-code {
-  position: absolute;
+  position: sticky;
+  float: right;
   bottom: var(--s2);
-  right: var(--s6);
+  right: var(--s2);
   z-index: 1;
 }
 
 .sh-code .code-lang {
-  right: calc(var(--s6) + 3.5rem);
+  right: calc(var(--s2) + 3.5rem);
 }
 
 /* Tags */
@@ -901,9 +902,10 @@ a {
 
 /* Language label */
 .code-lang {
-  position: absolute;
+  position: sticky;
+  float: right;
   bottom: var(--s2);
-  right: var(--s3);
+  right: var(--s2);
   font-family: var(--font-mono);
   font-size: 0.5625rem;
   text-transform: uppercase;
