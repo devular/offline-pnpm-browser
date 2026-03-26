@@ -1202,6 +1202,7 @@ a {
 
   .install-cmd {
     width: 100%;
+    justify-content: space-between;
   }
 
   .status-bar {
