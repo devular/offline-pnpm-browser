@@ -51,6 +51,7 @@ function RootLayout() {
   const [searchResults, setSearchResults] = useState<SearchResponse | null>(null);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(-1);
+  const [isSearching, setIsSearching] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout>>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const queryRef = useRef('');
@@ -89,10 +90,12 @@ function RootLayout() {
     }
 
     setIsSearchOpen(true);
+    setIsSearching(true);
     debounceRef.current = setTimeout(async () => {
       const results = await searchPackages({ data: { q, limit: 8 } });
       setSearchResults(results);
       setActiveIndex(-1);
+      setIsSearching(false);
     }, 150);
   }, []);
 
@@ -100,6 +103,7 @@ function RootLayout() {
     setSearchResults(null);
     setIsSearchOpen(false);
     setActiveIndex(-1);
+    setIsSearching(false);
     if (inputRef.current) inputRef.current.value = '';
     queryRef.current = '';
   }, []);
@@ -159,6 +163,7 @@ function RootLayout() {
             role="combobox"
             aria-expanded={isSearchOpen}
             aria-haspopup="listbox"
+            data-searching={isSearching || undefined}
           >
             <input
               ref={inputRef}
