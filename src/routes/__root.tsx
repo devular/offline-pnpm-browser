@@ -54,6 +54,7 @@ function RootLayout() {
   const [isSearching, setIsSearching] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout>>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const wrapRef = useRef<HTMLDivElement>(null);
   const queryRef = useRef('');
 
   // / key focuses search from anywhere
@@ -95,7 +96,35 @@ function RootLayout() {
       const results = await searchPackages({ data: { q, limit: 8 } });
       setSearchResults(results);
       setActiveIndex(-1);
-      setIsSearching(false);
+      // Let the ring finish its current loop before fading out
+      const wrap = wrapRef.current;
+      if (wrap) {
+        const before =
+          wrap.querySelector(':scope')?.getAnimations() ?? wrap.getAnimations({ subtree: true });
+        const ringAnim = Array.from(before).find(
+          (a) => a instanceof CSSAnimation && a.animationName === 'ringRotate',
+        ) as CSSAnimation | undefined;
+        if (ringAnim) {
+          wrap.removeAttribute('data-searching');
+          wrap.setAttribute('data-finishing', '');
+          ringAnim.addEventListener(
+            'animationiteration',
+            () => {
+              wrap.removeAttribute('data-finishing');
+              wrap.setAttribute('data-fading', '');
+              setTimeout(() => {
+                wrap.removeAttribute('data-fading');
+                setIsSearching(false);
+              }, 300);
+            },
+            { once: true },
+          );
+        } else {
+          setIsSearching(false);
+        }
+      } else {
+        setIsSearching(false);
+      }
     }, 150);
   }, []);
 
@@ -104,6 +133,8 @@ function RootLayout() {
     setIsSearchOpen(false);
     setActiveIndex(-1);
     setIsSearching(false);
+    wrapRef.current?.removeAttribute('data-finishing');
+    wrapRef.current?.removeAttribute('data-fading');
     if (inputRef.current) inputRef.current.value = '';
     queryRef.current = '';
   }, []);
@@ -159,6 +190,7 @@ function RootLayout() {
             Package Explorer
           </Link>
           <div
+            ref={wrapRef}
             className="header-search-wrap"
             role="combobox"
             aria-expanded={isSearchOpen}

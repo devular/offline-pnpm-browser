@@ -165,26 +165,38 @@ a {
   content: '';
   position: absolute;
   inset: -2px;
+  border-radius: 4px;
   background: conic-gradient(
     from var(--ring-angle, 0deg),
     transparent 0%,
+    var(--accent) 15%,
     var(--ink) 30%,
-    transparent 60%
+    transparent 50%
   );
   opacity: 0;
-  transition: opacity 0.2s var(--ease);
   pointer-events: none;
   z-index: 1;
   mask:
     linear-gradient(#000, #000) content-box,
     linear-gradient(#000, #000);
   mask-composite: exclude;
-  padding: 1px;
-  animation: ringRotate 0.8s linear infinite paused;
+  padding: 1.5px;
+  animation: ringRotate 0.7s linear infinite paused;
 }
 
 .header-search-wrap[data-searching]::before {
   opacity: 1;
+  animation-play-state: running;
+}
+
+.header-search-wrap[data-finishing]::before {
+  opacity: 1;
+  animation-play-state: running;
+}
+
+.header-search-wrap[data-fading]::before {
+  opacity: 0;
+  transition: opacity 0.3s var(--ease);
   animation-play-state: running;
 }
 
@@ -208,6 +220,7 @@ a {
   font-weight: 400;
   background: transparent;
   border: 1px solid var(--ink-mid);
+  border-radius: 3px;
   color: var(--text-1);
   outline: none;
   transition: border-color var(--speed) var(--ease);
