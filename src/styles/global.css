@@ -169,10 +169,12 @@ a {
   background: conic-gradient(
     from var(--ring-angle, 0deg),
     transparent 0%,
-    var(--paper-dark) 10%,
-    var(--ink-mid) 25%,
-    var(--paper-dark) 40%,
-    transparent 50%
+    #f0c27a 10%,
+    #e8855b 20%,
+    var(--accent) 30%,
+    #e8855b 38%,
+    #f0c27a 44%,
+    transparent 52%
   );
   opacity: 0;
   pointer-events: none;
