@@ -90,17 +90,19 @@ export const getCategoryDetail = createServerFn({ method: 'GET' })
 
 // --- Search (SQLite FTS5) ---
 
+export interface SearchResultItem {
+  name: string;
+  latestVersion: string;
+  versions: string[];
+  description: string | null;
+  keywords: string[];
+  license: string | null;
+}
+
 export interface SearchResponse {
   query: string;
   count: number;
-  results: Array<{
-    id: number;
-    name: string;
-    version: string;
-    description: string | null;
-    keywords: string[];
-    license: string | null;
-  }>;
+  results: SearchResultItem[];
 }
 
 export const searchPackages = createServerFn({ method: 'GET' })
@@ -116,16 +118,49 @@ export const searchPackages = createServerFn({ method: 'GET' })
       .map((term) => `"${term.replace(/"/g, '')}"*`)
       .join(' ');
 
-    const formatRow = (r: SearchResult | FusePackage) => ({
-      id: r.id,
-      name: r.name,
-      version: r.version,
-      description: r.description,
-      keywords: (r.keywords ?? '').split(', ').filter(Boolean),
-      license: r.license,
-    });
+    const collapseVersions = (
+      rows: Array<{
+        name: string;
+        version: string;
+        description: string | null;
+        keywords: string | null;
+        license: string | null;
+      }>,
+    ): SearchResultItem[] => {
+      const map = new Map<string, SearchResultItem>();
+      for (const r of rows) {
+        const existing = map.get(r.name);
+        if (existing) {
+          existing.versions.push(r.version);
+        } else {
+          map.set(r.name, {
+            name: r.name,
+            latestVersion: r.version,
+            versions: [r.version],
+            description: r.description,
+            keywords: (r.keywords ?? '').split(', ').filter(Boolean),
+            license: r.license,
+          });
+        }
+      }
+      // Sort versions descending within each package
+      for (const item of map.values()) {
+        item.versions.sort(compareSemver);
+        item.latestVersion = item.versions[0];
+      }
+      return Array.from(map.values());
+    };
 
-    // 1. Try FTS5 prefix search
+    const sortExactFirst = (results: SearchResultItem[], query: string): SearchResultItem[] => {
+      const qLower = query.trim().toLowerCase();
+      return results.sort((a, b) => {
+        const aExact = a.name.toLowerCase() === qLower ? 0 : 1;
+        const bExact = b.name.toLowerCase() === qLower ? 0 : 1;
+        return aExact - bExact;
+      });
+    };
+
+    // 1. Try FTS5 prefix search — fetch more rows to account for version collapsing
     try {
       const rows = db
         .prepare(
@@ -136,15 +171,11 @@ export const searchPackages = createServerFn({ method: 'GET' })
          ORDER BY f.rank
          LIMIT ?`,
         )
-        .all(sanitized, limit) as unknown as SearchResult[];
+        .all(sanitized, limit * 10) as unknown as SearchResult[];
 
       if (rows.length > 0) {
-        const qLower = q.trim().toLowerCase();
-        const results = rows.map(formatRow).sort((a, b) => {
-          const aExact = a.name.toLowerCase() === qLower ? 0 : 1;
-          const bExact = b.name.toLowerCase() === qLower ? 0 : 1;
-          return aExact - bExact;
-        });
+        const collapsed = collapseVersions(rows);
+        const results = sortExactFirst(collapsed, q).slice(0, limit);
         return { query: q, count: results.length, results };
       }
     } catch {
@@ -153,12 +184,14 @@ export const searchPackages = createServerFn({ method: 'GET' })
 
     // 2. Fuzzy fallback via Fuse.js
     const fuse = getFuse();
-    const fuzzyResults = fuse.search(q, { limit });
+    const fuzzyResults = fuse.search(q, { limit: limit * 10 });
+    const collapsed = collapseVersions(fuzzyResults.map((r) => r.item));
+    const results = sortExactFirst(collapsed, q).slice(0, limit);
 
     return {
       query: q,
-      count: fuzzyResults.length,
-      results: fuzzyResults.map((r) => formatRow(r.item)),
+      count: results.length,
+      results,
     };
   });
 

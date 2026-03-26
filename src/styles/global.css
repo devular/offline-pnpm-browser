@@ -226,6 +226,11 @@ a {
   text-align: right;
 }
 
+.search-dropdown-ver-count {
+  opacity: 0.6;
+  font-size: 0.85em;
+}
+
 .search-dropdown-desc {
   font-size: var(--text-xs);
   color: var(--text-2);

@@ -182,7 +182,7 @@ function RootLayout() {
                   <>
                     {searchResults.results.map((pkg, i) => (
                       <Link
-                        key={`${pkg.name}-${pkg.id}`}
+                        key={pkg.name}
                         id={`search-result-${i}`}
                         to="/package/$name"
                         params={{ name: pkg.name }}
@@ -194,7 +194,15 @@ function RootLayout() {
                         <span className="search-dropdown-name">
                           {highlightMatch(pkg.name, queryRef.current)}
                         </span>
-                        <span className="search-dropdown-ver">{pkg.version}</span>
+                        <span className="search-dropdown-ver">
+                          {pkg.latestVersion}
+                          {pkg.versions.length > 1 && (
+                            <span className="search-dropdown-ver-count">
+                              {' '}
+                              +{pkg.versions.length - 1}
+                            </span>
+                          )}
+                        </span>
                         {pkg.description && (
                           <span className="search-dropdown-desc">{pkg.description}</span>
                         )}
