@@ -169,11 +169,9 @@ a {
   background: conic-gradient(
     from var(--ring-angle, 0deg),
     transparent 0%,
-    var(--paper-dark) 8%,
-    var(--ink-mid) 16%,
-    var(--accent) 24%,
-    var(--ink) 32%,
-    var(--ink-mid) 38%,
+    var(--paper-dark) 10%,
+    var(--ink-mid) 25%,
+    var(--paper-dark) 40%,
     transparent 50%
   );
   opacity: 0;
