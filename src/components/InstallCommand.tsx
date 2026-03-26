@@ -1,4 +1,6 @@
 import { useCopy } from '@root/hooks/useCopy';
+import { CopyIcon } from '@root/components/CopyIcon';
+import { CheckIcon } from '@root/components/CheckIcon';
 
 export function InstallCommand({ name, version }: { name: string; version: string }) {
   const cmd = `pnpm add ${name}@${version} --offline`;
@@ -10,7 +12,10 @@ export function InstallCommand({ name, version }: { name: string; version: strin
         <span className="install-cmd-prompt">$</span> {cmd}
       </code>
       <span className={`install-cmd-action ${copied ? 'install-cmd-copied' : ''}`}>
-        {copied ? 'Copied' : 'Click to copy'}
+        <span className="install-cmd-action-text">{copied ? 'Copied' : 'Click to copy'}</span>
+        <span className="install-cmd-action-icon">
+          {copied ? <CheckIcon size={14} /> : <CopyIcon size={14} />}
+        </span>
       </span>
     </div>
   );

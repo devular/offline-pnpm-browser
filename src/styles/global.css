@@ -695,6 +695,8 @@ a {
 }
 
 .install-cmd-action {
+  display: inline-flex;
+  align-items: center;
   font-size: 0.5625rem;
   text-transform: uppercase;
   letter-spacing: 0.08em;
@@ -703,8 +705,23 @@ a {
   transition: color var(--speed) var(--ease);
 }
 
+.install-cmd-action-icon {
+  display: none;
+}
+
 .install-cmd-copied {
   color: var(--accent);
+}
+
+/* Copy button icon/text toggle */
+.copy-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s1);
+}
+
+.copy-btn-icon {
+  display: none;
 }
 
 /* Version selector */
@@ -1310,6 +1327,23 @@ a {
   .pkg-item {
     flex-wrap: wrap;
     gap: var(--s1) var(--s3);
+  }
+
+  /* Show icons instead of text for copy actions */
+  .install-cmd-action-text {
+    display: none;
+  }
+
+  .install-cmd-action-icon {
+    display: inline-flex;
+  }
+
+  .copy-btn-text {
+    display: none;
+  }
+
+  .copy-btn-icon {
+    display: inline-flex;
   }
 }
 

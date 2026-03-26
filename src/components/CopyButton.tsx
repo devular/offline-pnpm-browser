@@ -1,4 +1,6 @@
 import { useCopy } from '@root/hooks/useCopy';
+import { CopyIcon } from '@root/components/CopyIcon';
+import { CheckIcon } from '@root/components/CheckIcon';
 
 interface CopyButtonProps {
   text: string;
@@ -15,7 +17,10 @@ export function CopyButton({ text, className }: CopyButtonProps) {
       onClick={() => copy(text)}
       aria-label={copied ? 'Copied' : 'Copy to clipboard'}
     >
-      {copied ? 'Copied' : 'Copy'}
+      <span className="copy-btn-text">{copied ? 'Copied' : 'Copy'}</span>
+      <span className="copy-btn-icon">
+        {copied ? <CheckIcon size={12} /> : <CopyIcon size={12} />}
+      </span>
     </button>
   );
 }
