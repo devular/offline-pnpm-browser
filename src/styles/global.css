@@ -790,14 +790,13 @@ a {
 
 /* Copy button inside code blocks */
 .copy-btn-code {
-  position: sticky;
-  float: right;
+  position: absolute;
   bottom: var(--s2);
   right: var(--s2);
   z-index: 1;
 }
 
-.sh-code .code-lang {
+.code-block-wrap .code-lang {
   right: calc(var(--s2) + 3.5rem);
 }
 
@@ -881,15 +880,24 @@ a {
   padding: 0.1em 0.35em;
 }
 
+.code-block-wrap {
+  position: relative;
+  margin: 1.5em 0;
+  background: var(--ink);
+}
+
 .readme-body pre,
 .readme-body pre.sh-code {
   background: var(--ink);
   color: var(--paper);
   padding: var(--s4) var(--s6);
   overflow-x: auto;
-  margin: 1.5em 0;
+  margin: 0;
   font-family: var(--font-mono);
-  position: relative;
+}
+
+.code-block-wrap + .code-block-wrap {
+  margin-top: 0;
 }
 
 .readme-body pre code {
@@ -902,10 +910,9 @@ a {
 
 /* Language label */
 .code-lang {
-  position: sticky;
-  float: right;
+  position: absolute;
   bottom: var(--s2);
-  right: var(--s2);
+  right: var(--s3);
   font-family: var(--font-mono);
   font-size: 0.5625rem;
   text-transform: uppercase;
@@ -1211,11 +1218,14 @@ a {
   }
 
   /* Code blocks */
+  .readme-body .code-block-wrap {
+    margin-left: calc(-1 * var(--s4));
+    margin-right: calc(-1 * var(--s4));
+  }
+
   .readme-body pre,
   .readme-body pre.sh-code {
     padding: var(--s3) var(--s4);
-    margin-left: calc(-1 * var(--s4));
-    margin-right: calc(-1 * var(--s4));
     border-radius: 0;
   }
 

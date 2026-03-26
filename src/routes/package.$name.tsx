@@ -68,7 +68,7 @@ function buildReadmeHtml(readme: string): string | null {
           const highlighted = highlight(text);
           const langLabel = lang ? `<span class="code-lang">${lang}</span>` : '';
           const id = `code-block-${blockIndex++}`;
-          return `<pre class="sh-code" id="${id}">${langLabel}<code>${highlighted}</code><button class="copy-btn copy-btn-code" data-copy-target="${id}" aria-label="Copy code">Copy</button></pre>`;
+          return `<div class="code-block-wrap" id="${id}">${langLabel}<pre class="sh-code"><code>${highlighted}</code></pre><button class="copy-btn copy-btn-code" data-copy-target="${id}" aria-label="Copy code">Copy</button></div>`;
         },
       },
     };
@@ -102,7 +102,25 @@ function PackagePage() {
       if (!pre) return;
       const code = pre.querySelector('code');
       if (!code) return;
-      navigator.clipboard.writeText(code.textContent ?? '').then(() => {
+      const text = code.textContent ?? '';
+      const doCopy = async () => {
+        try {
+          await navigator.clipboard.writeText(text);
+          return true;
+        } catch {
+          const ta = document.createElement('textarea');
+          ta.value = text;
+          ta.style.cssText = 'position:fixed;left:-9999px;opacity:0';
+          document.body.appendChild(ta);
+          ta.focus();
+          ta.setSelectionRange(0, text.length);
+          const ok = document.execCommand('copy');
+          document.body.removeChild(ta);
+          return ok;
+        }
+      };
+      doCopy().then((ok) => {
+        if (!ok) return;
         btn.textContent = 'Copied';
         btn.classList.add('copy-btn-done');
         setTimeout(() => {
