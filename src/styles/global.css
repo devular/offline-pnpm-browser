@@ -791,13 +791,16 @@ a {
 /* Copy button inside code blocks */
 .copy-btn-code {
   position: absolute;
-  bottom: var(--s2);
-  right: var(--s2);
+  bottom: var(--s4);
+  right: var(--s4);
   z-index: 1;
+  width: 6ch;
+  text-align: center;
+  justify-content: center;
 }
 
 .code-block-wrap .code-lang {
-  right: calc(var(--s2) + 3.5rem);
+  right: calc(var(--s4) + 6ch + var(--s3));
 }
 
 /* Tags */
