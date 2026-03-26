@@ -51,7 +51,6 @@ function RootLayout() {
   const [searchResults, setSearchResults] = useState<SearchResponse | null>(null);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(-1);
-  const [isSearching, setIsSearching] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout>>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const wrapRef = useRef<HTMLDivElement>(null);
@@ -91,39 +90,38 @@ function RootLayout() {
     }
 
     setIsSearchOpen(true);
-    setIsSearching(true);
+    // Clear any pending fade and start the ring
+    const wrap = wrapRef.current;
+    if (wrap) {
+      wrap.removeAttribute('data-finishing');
+      wrap.removeAttribute('data-fading');
+      wrap.setAttribute('data-searching', '');
+    }
     debounceRef.current = setTimeout(async () => {
       const results = await searchPackages({ data: { q, limit: 8 } });
       setSearchResults(results);
       setActiveIndex(-1);
       // Let the ring finish its current loop before fading out
-      const wrap = wrapRef.current;
       if (wrap) {
-        const before =
-          wrap.querySelector(':scope')?.getAnimations() ?? wrap.getAnimations({ subtree: true });
-        const ringAnim = Array.from(before).find(
+        wrap.removeAttribute('data-searching');
+        wrap.setAttribute('data-finishing', '');
+        const anims = wrap.getAnimations({ subtree: true });
+        const ringAnim = anims.find(
           (a) => a instanceof CSSAnimation && a.animationName === 'ringRotate',
-        ) as CSSAnimation | undefined;
+        );
         if (ringAnim) {
-          wrap.removeAttribute('data-searching');
-          wrap.setAttribute('data-finishing', '');
           ringAnim.addEventListener(
             'animationiteration',
             () => {
               wrap.removeAttribute('data-finishing');
               wrap.setAttribute('data-fading', '');
-              setTimeout(() => {
-                wrap.removeAttribute('data-fading');
-                setIsSearching(false);
-              }, 300);
+              setTimeout(() => wrap.removeAttribute('data-fading'), 300);
             },
             { once: true },
           );
         } else {
-          setIsSearching(false);
+          wrap.removeAttribute('data-finishing');
         }
-      } else {
-        setIsSearching(false);
       }
     }, 150);
   }, []);
@@ -132,7 +130,7 @@ function RootLayout() {
     setSearchResults(null);
     setIsSearchOpen(false);
     setActiveIndex(-1);
-    setIsSearching(false);
+    wrapRef.current?.removeAttribute('data-searching');
     wrapRef.current?.removeAttribute('data-finishing');
     wrapRef.current?.removeAttribute('data-fading');
     if (inputRef.current) inputRef.current.value = '';
@@ -195,7 +193,6 @@ function RootLayout() {
             role="combobox"
             aria-expanded={isSearchOpen}
             aria-haspopup="listbox"
-            data-searching={isSearching || undefined}
           >
             <input
               ref={inputRef}
