@@ -139,7 +139,13 @@ export const searchPackages = createServerFn({ method: 'GET' })
         .all(sanitized, limit) as unknown as SearchResult[];
 
       if (rows.length > 0) {
-        return { query: q, count: rows.length, results: rows.map(formatRow) };
+        const qLower = q.trim().toLowerCase();
+        const results = rows.map(formatRow).sort((a, b) => {
+          const aExact = a.name.toLowerCase() === qLower ? 0 : 1;
+          const bExact = b.name.toLowerCase() === qLower ? 0 : 1;
+          return aExact - bExact;
+        });
+        return { query: q, count: results.length, results };
       }
     } catch {
       // FTS5 syntax error — fall through to fuzzy
