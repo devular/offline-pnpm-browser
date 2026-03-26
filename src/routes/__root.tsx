@@ -105,23 +105,19 @@ function RootLayout() {
       if (wrap) {
         wrap.removeAttribute('data-searching');
         wrap.setAttribute('data-finishing', '');
-        const anims = wrap.getAnimations({ subtree: true });
-        const ringAnim = anims.find(
-          (a) => a instanceof CSSAnimation && a.animationName === 'ringRotate',
-        );
-        if (ringAnim) {
-          ringAnim.addEventListener(
-            'animationiteration',
-            () => {
-              wrap.removeAttribute('data-finishing');
-              wrap.setAttribute('data-fading', '');
-              setTimeout(() => wrap.removeAttribute('data-fading'), 300);
-            },
-            { once: true },
-          );
-        } else {
+        const onIteration = () => {
+          wrap.removeEventListener('animationiteration', onIteration);
           wrap.removeAttribute('data-finishing');
-        }
+          wrap.setAttribute('data-fading', '');
+          setTimeout(() => wrap.removeAttribute('data-fading'), 300);
+        };
+        wrap.addEventListener('animationiteration', onIteration);
+        // Safety fallback — if event never fires, clean up after one full loop duration
+        setTimeout(() => {
+          wrap.removeEventListener('animationiteration', onIteration);
+          wrap.removeAttribute('data-finishing');
+          wrap.removeAttribute('data-fading');
+        }, 800);
       }
     }, 150);
   }, []);
