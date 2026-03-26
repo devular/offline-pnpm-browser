@@ -23,6 +23,7 @@ Browse and search your local pnpm store — entirely offline.
 - Dependency and dependent graph navigation
 - Version selector with copy-to-clipboard install commands
 - Incremental indexing — re-index in ~1 second
+- Responsive design for mobile and tablet
 - Works completely offline after initial indexing
 
 ## Prerequisites
@@ -30,7 +31,7 @@ Browse and search your local pnpm store — entirely offline.
 - Node.js >= 22 (uses `node:sqlite`)
 - pnpm
 
-## Getting started
+## Quick start
 
 ```bash
 # Install dependencies
@@ -43,13 +44,68 @@ pnpm run index
 pnpm run dev
 ```
 
-The app runs at `http://localhost:3000`.
+The app runs at `http://localhost:54321`.
 
-For production:
+## Installation (background service)
+
+The install script sets up Offline PNPM Browser as a persistent background service that starts on boot and re-indexes your pnpm store every hour.
+
+```bash
+./scripts/install.sh
+```
+
+This will:
+
+1. **Install dependencies** and build the production bundle
+2. **Index your pnpm store** (full on first run, incremental if a database exists)
+3. **Register a background service** that auto-starts and stays alive:
+   - **macOS** — launchd (`~/Library/LaunchAgents/com.offline-pnpm-browser.plist`)
+   - **Linux** — systemd user service (`~/.config/systemd/user/offline-pnpm-browser.service`)
+4. **Set up hourly incremental indexing** via a separate launchd/systemd timer
+5. **Install a git hook** so `git pull` automatically rebuilds and restarts the server
+
+After install, the server is available at:
+
+```
+http://localhost:54321
+```
+
+If you have Tailscale running, the script will also print your Tailscale URL.
+
+### Environment variables
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `PORT` | `54321` | Server port |
+| `HOST` | `0.0.0.0` | Bind address |
+
+Override at install time:
+
+```bash
+PORT=8080 ./scripts/install.sh
+```
+
+## Running in development
+
+```bash
+pnpm run dev
+```
+
+Starts a Vite dev server at `http://localhost:54321` with HMR.
+
+## Running in production (manual)
+
+If you prefer not to use the install script:
 
 ```bash
 pnpm run build
 pnpm run start
+```
+
+Or directly:
+
+```bash
+node start.js
 ```
 
 ## Indexing
@@ -69,6 +125,93 @@ pnpm run index:full
 
 Incremental indexing compares file mtimes against a stored `last_indexed_at` timestamp. Only store index files modified since the last run are processed. The FTS index is rebuilt in bulk at the end (~1-2 seconds regardless of how many packages changed).
 
+### Force reindex
+
+Use the reindex script to manually trigger a re-index and restart the server:
+
+```bash
+# Incremental
+./scripts/reindex.sh
+
+# Full rebuild
+./scripts/reindex.sh --full
+```
+
+This works whether the server is managed by launchd, systemd, or running manually — it will attempt to restart the appropriate service after indexing.
+
+## Maintenance
+
+### Viewing logs
+
+**macOS:**
+
+```bash
+# Server logs
+tail -f ~/Library/Logs/offline-pnpm-browser/stdout.log
+tail -f ~/Library/Logs/offline-pnpm-browser/stderr.log
+
+# Indexer logs
+tail -f ~/Library/Logs/offline-pnpm-browser/index-stdout.log
+```
+
+**Linux:**
+
+```bash
+journalctl --user -u offline-pnpm-browser -f
+journalctl --user -u offline-pnpm-browser-index -f
+```
+
+### Managing the service
+
+**macOS (launchd):**
+
+```bash
+# Stop
+launchctl bootout gui/$(id -u)/com.offline-pnpm-browser
+
+# Start
+launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.offline-pnpm-browser.plist
+
+# Restart
+launchctl kickstart -k gui/$(id -u)/com.offline-pnpm-browser
+```
+
+**Linux (systemd):**
+
+```bash
+# Stop / start / restart
+systemctl --user stop offline-pnpm-browser
+systemctl --user start offline-pnpm-browser
+systemctl --user restart offline-pnpm-browser
+
+# Check status
+systemctl --user status offline-pnpm-browser
+
+# Disable on boot
+systemctl --user disable offline-pnpm-browser
+```
+
+### Uninstalling
+
+**macOS:**
+
+```bash
+launchctl bootout gui/$(id -u)/com.offline-pnpm-browser
+launchctl bootout gui/$(id -u)/com.offline-pnpm-browser.index
+rm ~/Library/LaunchAgents/com.offline-pnpm-browser.plist
+rm ~/Library/LaunchAgents/com.offline-pnpm-browser.index.plist
+rm -rf ~/Library/Logs/offline-pnpm-browser
+```
+
+**Linux:**
+
+```bash
+systemctl --user disable --now offline-pnpm-browser.service
+systemctl --user disable --now offline-pnpm-browser-index.timer
+rm ~/.config/systemd/user/offline-pnpm-browser.*
+systemctl --user daemon-reload
+```
+
 ## Search
 
 Search uses a three-tier strategy:
@@ -76,6 +219,8 @@ Search uses a three-tier strategy:
 1. **FTS5 prefix search** — the primary path. Queries are tokenized and wrapped with `*` for prefix matching, so typing "fastif" matches "fastify". Ranked by FTS5 relevance.
 2. **Fuzzy fallback (Fuse.js)** — when FTS5 returns zero results, falls back to fuzzy matching with typo tolerance. Handles transpositions ("fsatify"), missing characters ("fstify"), and other typos. The Fuse index is lazy-initialized on first use and kept in memory.
 3. Searches across package names (weighted 3x), keywords (1.5x), and descriptions (1x).
+
+Results are collapsed by package name (multiple versions grouped together) with exact name matches sorted to the top.
 
 ## Scripts
 
@@ -89,6 +234,9 @@ Search uses a three-tier strategy:
 | `pnpm run pipeline` | Run discover → fetch → verify |
 | `pnpm run backup` | Backup indexed data |
 | `pnpm run restore` | Restore from backup |
+| `./scripts/install.sh` | Set up as background service |
+| `./scripts/reindex.sh` | Force reindex and restart server |
+| `./scripts/reindex.sh --full` | Force full reindex and restart |
 
 ## Tech stack
 
