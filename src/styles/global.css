@@ -794,13 +794,13 @@ a {
   bottom: var(--s4);
   right: var(--s4);
   z-index: 1;
-  width: 6ch;
+  width: 8ch;
   text-align: center;
   justify-content: center;
 }
 
 .code-block-wrap .code-lang {
-  right: calc(var(--s4) + 6ch + var(--s3));
+  right: calc(var(--s4) + 8ch + var(--s3));
 }
 
 /* Tags */
@@ -914,8 +914,8 @@ a {
 /* Language label */
 .code-lang {
   position: absolute;
-  bottom: var(--s2);
-  right: var(--s3);
+  bottom: var(--s4);
+  right: var(--s4);
   font-family: var(--font-mono);
   font-size: 0.5625rem;
   text-transform: uppercase;
