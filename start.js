@@ -51,7 +51,7 @@ const server = createServer(async (req, res) => {
   res.end(body);
 });
 
-const port = process.env.PORT || 3000;
+const port = process.env.PORT || 54321;
 server.listen(port, () => {
   console.log(`Offline PNPM Browser running at http://localhost:${port}`);
 });
