@@ -219,7 +219,7 @@ a {
   width: 100%;
   padding: 0.4rem 0.75rem;
   font-family: var(--font-mono);
-  font-size: var(--text-xs);
+  font-size: 16px; /* ≥16px prevents iOS Safari auto-zoom on focus */
   font-weight: 400;
   background: transparent;
   border: 1px solid var(--ink-mid);
