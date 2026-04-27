@@ -49,7 +49,7 @@ export const packageSourceAdapters: PackageSourceAdapter[] = [
     id: 'yarn',
     label: 'Yarn cache',
     description: 'Yarn Berry zip cache, usually .yarn/cache or the configured cacheFolder.',
-    status: 'planned',
+    status: 'ready',
     folderHint: 'Choose a folder containing Yarn package zip archives.',
     detect: () => false,
   },
