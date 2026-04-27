@@ -1716,17 +1716,6 @@ a {
   transform: translateX(2px);
 }
 
-/* Logo: letter-spacing tightens on hover */
-.site-logo {
-  transition:
-    color var(--speed) var(--ease),
-    letter-spacing 200ms var(--ease);
-}
-
-.site-logo:hover {
-  letter-spacing: 0.08em;
-}
-
 /* Graph stat numbers: hover highlights */
 .graph-stat {
   transition: color var(--speed) var(--ease);
