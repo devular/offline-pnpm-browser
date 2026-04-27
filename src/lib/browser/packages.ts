@@ -52,9 +52,15 @@ export interface BrowserIndexStats {
   uniquePackages: number;
   totalDependencies: number;
   totalSize: number;
+  sourceBreakdown: BrowserIndexSourceStat[];
   lastIndexedAt: number | null;
   storeName: string | null;
   persisted: boolean;
+}
+
+export interface BrowserIndexSourceStat {
+  type: BrowserPackageSourceType;
+  versions: number;
 }
 
 export interface BrowserSearchResultItem {

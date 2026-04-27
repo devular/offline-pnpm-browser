@@ -31,6 +31,16 @@ export function CacheConfigureCallout({
             {stats.lastIndexedAt ? ` · indexed ${formatDate(stats.lastIndexedAt)}` : ''}
           </p>
         )}
+        {stats?.sourceBreakdown.length ? (
+          <div className="cache-config-sources" aria-label="Indexed package manager sources">
+            {stats.sourceBreakdown.map((source) => (
+              <span className="cache-config-source" key={source.type}>
+                <strong>{formatSourceName(source.type)}</strong>
+                {source.versions.toLocaleString()} versions
+              </span>
+            ))}
+          </div>
+        ) : null}
       </div>
       <Link to="/configure" className="cache-config-link">
         {hasIndex ? 'Configure caches' : 'Configure local cache'}
@@ -53,4 +63,19 @@ function formatDate(value: number): string {
     hour: '2-digit',
     minute: '2-digit',
   }).format(new Date(value));
+}
+
+function formatSourceName(source: string): string {
+  switch (source) {
+    case 'pnpm':
+      return 'pnpm';
+    case 'bun':
+      return 'Bun';
+    case 'yarn':
+      return 'Yarn';
+    case 'node-modules':
+      return 'node_modules';
+    default:
+      return source;
+  }
 }

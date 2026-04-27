@@ -3,6 +3,7 @@ import type {
   BrowserIndexStats,
   BrowserPackageDetail,
   BrowserPackageRecord,
+  BrowserPackageSourceType,
   BrowserSearchResponse,
   BrowserSearchResultItem,
 } from './packages';
@@ -127,12 +128,16 @@ export async function getBrowserIndexStats(): Promise<BrowserIndexStats> {
   await txDone(tx);
 
   const names = new Set<string>();
+  const sourceCounts = new Map<BrowserPackageSourceType, number>();
   let totalSize = 0;
   let totalDependencies = 0;
   for (const pkg of packages) {
     names.add(pkg.name);
     totalSize += pkg.totalSize;
     totalDependencies += pkg.dependencyCount ?? 0;
+    for (const source of pkg.sources ?? []) {
+      sourceCounts.set(source.type, (sourceCounts.get(source.type) ?? 0) + 1);
+    }
   }
 
   const persisted = navigator.storage?.persisted ? await navigator.storage.persisted() : false;
@@ -142,6 +147,9 @@ export async function getBrowserIndexStats(): Promise<BrowserIndexStats> {
     uniquePackages: names.size,
     totalDependencies,
     totalSize,
+    sourceBreakdown: Array.from(sourceCounts, ([type, versions]) => ({ type, versions })).sort(
+      (a, b) => b.versions - a.versions || a.type.localeCompare(b.type),
+    ),
     lastIndexedAt: lastIndexedAt ?? null,
     storeName: storeName ?? null,
     persisted,
