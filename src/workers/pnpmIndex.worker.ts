@@ -174,6 +174,7 @@ async function processPackage(
     totalSize,
     dependencyCount,
     dependencies,
+    sources: [{ type: 'pnpm', label: storeHandle.name, indexedAt: Date.now() }],
     indexedAt: Date.now(),
     sourceMtime,
     searchText:

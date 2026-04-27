@@ -101,8 +101,9 @@ export async function putPackageBatch(packages: BrowserPackageRecord[]): Promise
   const db = await openDb();
   const tx = db.transaction(PACKAGE_STORE, 'readwrite');
   const store = tx.objectStore(PACKAGE_STORE);
-  for (const pkg of packages) {
-    store.put(pkg);
+  for (const incoming of packages) {
+    const existing = await requestResult<BrowserPackageRecord | undefined>(store.get(incoming.key));
+    store.put(existing ? mergePackageRecord(existing, incoming) : incoming);
   }
   await txDone(tx);
 }
@@ -269,4 +270,29 @@ function compareSemver(a: string, b: string): number {
     if (diff !== 0) return diff;
   }
   return 0;
+}
+
+function mergePackageRecord(
+  existing: BrowserPackageRecord,
+  incoming: BrowserPackageRecord,
+): BrowserPackageRecord {
+  const sourceMap = new Map(
+    [...(existing.sources ?? []), ...(incoming.sources ?? [])].map((source) => [
+      `${source.type}:${source.label}`,
+      source,
+    ]),
+  );
+
+  return {
+    ...existing,
+    ...incoming,
+    readme: incoming.readme ?? existing.readme,
+    description: incoming.description ?? existing.description,
+    keywords: incoming.keywords.length > 0 ? incoming.keywords : existing.keywords,
+    dependencies:
+      incoming.dependencies.length > 0 ? incoming.dependencies : (existing.dependencies ?? []),
+    dependencyCount: incoming.dependencyCount || existing.dependencyCount || 0,
+    totalSize: Math.max(incoming.totalSize, existing.totalSize),
+    sources: Array.from(sourceMap.values()).sort((a, b) => a.type.localeCompare(b.type)),
+  };
 }

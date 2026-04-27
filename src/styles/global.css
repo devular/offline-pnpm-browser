@@ -404,6 +404,107 @@ a {
   font-weight: 300;
 }
 
+/* ═══ Onboarding ═══ */
+.onboarding-page {
+  flex: 1;
+  max-width: var(--content-w);
+  margin: 0 auto;
+  width: 100%;
+  padding: var(--s12) var(--s6) var(--s8);
+}
+
+.onboarding-hero {
+  max-width: 44rem;
+  margin-bottom: var(--s8);
+}
+
+.onboarding-hero h1 {
+  font-family: var(--font-display);
+  font-size: var(--text-2xl);
+  line-height: 1.1;
+  color: var(--ink);
+  margin-bottom: var(--s3);
+}
+
+.onboarding-hero p {
+  color: var(--text-2);
+  font-size: var(--text-sm);
+}
+
+.onboarding-primary-link {
+  display: inline-flex;
+  margin-top: var(--s4);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--paper);
+  background: var(--ink);
+  padding: var(--s3) var(--s4);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.onboarding-primary-link:hover {
+  background: var(--accent);
+}
+
+.source-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+  gap: 1px;
+  margin-bottom: var(--s8);
+  background: var(--ink);
+  border: 1px solid var(--ink);
+}
+
+.source-card {
+  min-height: 12rem;
+  background: var(--paper);
+  padding: var(--s6);
+}
+
+.source-card-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--s3);
+  margin-bottom: var(--s3);
+}
+
+.source-card h2 {
+  font-family: var(--font-display);
+  font-size: var(--text-base);
+  color: var(--ink);
+}
+
+.source-card p {
+  font-size: var(--text-sm);
+  color: var(--text-2);
+}
+
+.source-hint {
+  margin-top: var(--s3);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs) !important;
+  color: var(--text-3) !important;
+}
+
+.source-status {
+  font-family: var(--font-mono);
+  font-size: 0.5625rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  border: 1px solid currentColor;
+  padding: 0.1rem 0.35rem;
+}
+
+.source-status-ready {
+  color: var(--accent);
+}
+
+.source-status-planned {
+  color: var(--text-3);
+}
+
 /* ═══ Browser Index ═══ */
 .browser-index-panel {
   border: 1px solid var(--ink);

@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root';
 import { Route as IndexRouteImport } from './routes/index';
+import { Route as OnboardingRouteImport } from './routes/onboarding';
 import { Route as PackageNameRouteImport } from './routes/package.$name';
 import { Route as CategorySlugRouteImport } from './routes/category.$slug';
 
@@ -23,6 +24,11 @@ const PackageNameRoute = PackageNameRouteImport.update({
   path: '/package/$name',
   getParentRoute: () => rootRouteImport,
 } as any);
+const OnboardingRoute = OnboardingRouteImport.update({
+  id: '/onboarding',
+  path: '/onboarding',
+  getParentRoute: () => rootRouteImport,
+} as any);
 const CategorySlugRoute = CategorySlugRouteImport.update({
   id: '/category/$slug',
   path: '/category/$slug',
@@ -32,30 +38,34 @@ const CategorySlugRoute = CategorySlugRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute;
   '/category/$slug': typeof CategorySlugRoute;
+  '/onboarding': typeof OnboardingRoute;
   '/package/$name': typeof PackageNameRoute;
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute;
   '/category/$slug': typeof CategorySlugRoute;
+  '/onboarding': typeof OnboardingRoute;
   '/package/$name': typeof PackageNameRoute;
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport;
   '/': typeof IndexRoute;
   '/category/$slug': typeof CategorySlugRoute;
+  '/onboarding': typeof OnboardingRoute;
   '/package/$name': typeof PackageNameRoute;
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath;
-  fullPaths: '/' | '/category/$slug' | '/package/$name';
+  fullPaths: '/' | '/category/$slug' | '/onboarding' | '/package/$name';
   fileRoutesByTo: FileRoutesByTo;
-  to: '/' | '/category/$slug' | '/package/$name';
-  id: '__root__' | '/' | '/category/$slug' | '/package/$name';
+  to: '/' | '/category/$slug' | '/onboarding' | '/package/$name';
+  id: '__root__' | '/' | '/category/$slug' | '/onboarding' | '/package/$name';
   fileRoutesById: FileRoutesById;
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute;
   CategorySlugRoute: typeof CategorySlugRoute;
+  OnboardingRoute: typeof OnboardingRoute;
   PackageNameRoute: typeof PackageNameRoute;
 }
 
@@ -82,12 +92,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CategorySlugRouteImport;
       parentRoute: typeof rootRouteImport;
     };
+    '/onboarding': {
+      id: '/onboarding';
+      path: '/onboarding';
+      fullPath: '/onboarding';
+      preLoaderRoute: typeof OnboardingRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   CategorySlugRoute: CategorySlugRoute,
+  OnboardingRoute: OnboardingRoute,
   PackageNameRoute: PackageNameRoute,
 };
 export const routeTree = rootRouteImport

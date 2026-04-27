@@ -1,4 +1,4 @@
-import { createFileRoute } from '@tanstack/react-router';
+import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { useEffect, useState } from 'react';
 import { getBrowserIndexStats } from '@root/lib/browser/indexDb';
 import type { BrowserIndexStats } from '@root/lib/browser/packages';
@@ -12,6 +12,7 @@ export const Route = createFileRoute('/')({
 
 function HomePage() {
   const categories = getBrowserCategories();
+  const navigate = useNavigate();
   const [browserStats, setBrowserStats] = useState<BrowserIndexStats | null>(null);
 
   useEffect(() => {
@@ -19,7 +20,13 @@ function HomePage() {
     const refreshBrowserStats = async () => {
       try {
         const nextStats = await getBrowserIndexStats();
-        if (!cancelled) setBrowserStats(nextStats.totalPackages > 0 ? nextStats : null);
+        if (!cancelled) {
+          if (nextStats.totalPackages === 0) {
+            navigate({ to: '/onboarding', replace: true });
+            return;
+          }
+          setBrowserStats(nextStats);
+        }
       } catch {
         if (!cancelled) setBrowserStats(null);
       }

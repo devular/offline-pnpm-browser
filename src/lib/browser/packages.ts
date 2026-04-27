@@ -14,9 +14,18 @@ export interface BrowserPackageRecord {
   totalSize: number;
   dependencyCount: number;
   dependencies: BrowserDependencyRecord[];
+  sources: BrowserPackageSource[];
   indexedAt: number;
   sourceMtime: number;
   searchText: string;
+}
+
+export type BrowserPackageSourceType = 'pnpm' | 'bun' | 'yarn' | 'node-modules';
+
+export interface BrowserPackageSource {
+  type: BrowserPackageSourceType;
+  label: string;
+  indexedAt: number;
 }
 
 export interface BrowserDependencyRecord {
