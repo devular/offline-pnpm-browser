@@ -3,6 +3,7 @@ import { createRootRoute, Link, Outlet, useNavigate } from '@tanstack/react-rout
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { searchPackages } from '@root/lib/packages.functions';
 import type { SearchResponse } from '@root/lib/packages.functions';
+import { getBrowserIndexStats, searchBrowserPackages } from '@root/lib/browser/indexDb';
 import { RootDocument } from '@root/components/RootDocument';
 import { NotFound } from '@root/components/NotFound';
 import appCss from '@root/styles/global.css?url';
@@ -51,6 +52,7 @@ function RootLayout() {
   const [searchResults, setSearchResults] = useState<SearchResponse | null>(null);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(-1);
+  const [hasBrowserIndex, setHasBrowserIndex] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout>>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const wrapRef = useRef<HTMLDivElement>(null);
@@ -68,6 +70,27 @@ function RootLayout() {
     return () => document.removeEventListener('keydown', handleGlobalKey);
   }, []);
 
+  useEffect(() => {
+    let cancelled = false;
+    const refresh = async () => {
+      try {
+        const stats = await getBrowserIndexStats();
+        if (!cancelled) setHasBrowserIndex(stats.totalPackages > 0);
+      } catch {
+        if (!cancelled) setHasBrowserIndex(false);
+      }
+    };
+    const onUpdated = () => {
+      refresh();
+    };
+    refresh();
+    window.addEventListener('browser-index-updated', onUpdated);
+    return () => {
+      cancelled = true;
+      window.removeEventListener('browser-index-updated', onUpdated);
+    };
+  }, []);
+
   // Console easter egg
   useEffect(() => {
     console.log(
@@ -77,50 +100,55 @@ function RootLayout() {
     );
   }, []);
 
-  const handleSearch = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    const q = e.target.value.trim();
-    queryRef.current = q;
-    if (debounceRef.current) clearTimeout(debounceRef.current);
+  const handleSearch = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const q = e.target.value.trim();
+      queryRef.current = q;
+      if (debounceRef.current) clearTimeout(debounceRef.current);
 
-    if (!q) {
-      setSearchResults(null);
-      setIsSearchOpen(false);
-      setActiveIndex(-1);
-      return;
-    }
-
-    setIsSearchOpen(true);
-    // Clear any pending fade and start the ring
-    const wrap = wrapRef.current;
-    if (wrap) {
-      wrap.removeAttribute('data-finishing');
-      wrap.removeAttribute('data-fading');
-      wrap.setAttribute('data-searching', '');
-    }
-    debounceRef.current = setTimeout(async () => {
-      const results = await searchPackages({ data: { q, limit: 8 } });
-      setSearchResults(results);
-      setActiveIndex(-1);
-      // Let the ring finish its current loop before fading out
-      if (wrap) {
-        wrap.removeAttribute('data-searching');
-        wrap.setAttribute('data-finishing', '');
-        const onIteration = () => {
-          wrap.removeEventListener('animationiteration', onIteration);
-          wrap.removeAttribute('data-finishing');
-          wrap.setAttribute('data-fading', '');
-          setTimeout(() => wrap.removeAttribute('data-fading'), 300);
-        };
-        wrap.addEventListener('animationiteration', onIteration);
-        // Safety fallback — if event never fires, clean up after one full loop duration
-        setTimeout(() => {
-          wrap.removeEventListener('animationiteration', onIteration);
-          wrap.removeAttribute('data-finishing');
-          wrap.removeAttribute('data-fading');
-        }, 800);
+      if (!q) {
+        setSearchResults(null);
+        setIsSearchOpen(false);
+        setActiveIndex(-1);
+        return;
       }
-    }, 150);
-  }, []);
+
+      setIsSearchOpen(true);
+      // Clear any pending fade and start the ring
+      const wrap = wrapRef.current;
+      if (wrap) {
+        wrap.removeAttribute('data-finishing');
+        wrap.removeAttribute('data-fading');
+        wrap.setAttribute('data-searching', '');
+      }
+      debounceRef.current = setTimeout(async () => {
+        const results = hasBrowserIndex
+          ? await searchBrowserPackages(q, 8)
+          : await searchPackages({ data: { q, limit: 8 } });
+        setSearchResults(results);
+        setActiveIndex(-1);
+        // Let the ring finish its current loop before fading out
+        if (wrap) {
+          wrap.removeAttribute('data-searching');
+          wrap.setAttribute('data-finishing', '');
+          const onIteration = () => {
+            wrap.removeEventListener('animationiteration', onIteration);
+            wrap.removeAttribute('data-finishing');
+            wrap.setAttribute('data-fading', '');
+            setTimeout(() => wrap.removeAttribute('data-fading'), 300);
+          };
+          wrap.addEventListener('animationiteration', onIteration);
+          // Safety fallback — if event never fires, clean up after one full loop duration
+          setTimeout(() => {
+            wrap.removeEventListener('animationiteration', onIteration);
+            wrap.removeAttribute('data-finishing');
+            wrap.removeAttribute('data-fading');
+          }, 800);
+        }
+      }, 150);
+    },
+    [hasBrowserIndex],
+  );
 
   const dismiss = useCallback(() => {
     setSearchResults(null);
