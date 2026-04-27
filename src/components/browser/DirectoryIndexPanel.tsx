@@ -88,6 +88,11 @@ export function DirectoryIndexPanel({
             try {
               setProgress(data);
               await writeChainRef.current;
+              if (data.indexed === 0) {
+                throw new Error(
+                  `No packages were found in ${handle.name}. Choose the package cache itself, or a parent such as ~/.bun or ~/.bun/install.`,
+                );
+              }
               await finishBrowserIndex(handle.name, Date.now());
               window.dispatchEvent(
                 new CustomEvent('browser-index-updated', {

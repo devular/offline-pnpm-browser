@@ -165,10 +165,73 @@ async function* findPackageDirectories(
     return;
   }
 
-  for await (const [, child] of entries(root)) {
+  yield* findBunCachePackages(root);
+}
+
+async function* findBunCachePackages(
+  root: FileSystemDirectoryHandle,
+): AsyncIterable<FileSystemDirectoryHandle> {
+  const seen = new Set<string>();
+
+  for (const cacheRoot of await getBunCacheRoots(root)) {
+    if (await hasPackageJson(cacheRoot)) {
+      yield cacheRoot;
+      continue;
+    }
+
+    for await (const packageDir of findBunPackagesInCacheRoot(cacheRoot)) {
+      const key = packageDir.name;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      yield packageDir;
+    }
+  }
+}
+
+async function getBunCacheRoots(
+  root: FileSystemDirectoryHandle,
+): Promise<FileSystemDirectoryHandle[]> {
+  const roots = [root];
+
+  const directCache = await getOptionalDirectory(root, ['cache']);
+  if (directCache) roots.push(directCache);
+
+  const installCache = await getOptionalDirectory(root, ['install', 'cache']);
+  if (installCache) roots.push(installCache);
+
+  return roots;
+}
+
+async function getOptionalDirectory(
+  root: FileSystemDirectoryHandle,
+  path: string[],
+): Promise<FileSystemDirectoryHandle | null> {
+  let current = root;
+  for (const segment of path) {
+    try {
+      current = await current.getDirectoryHandle(segment);
+    } catch {
+      return null;
+    }
+  }
+  return current;
+}
+
+async function* findBunPackagesInCacheRoot(
+  root: FileSystemDirectoryHandle,
+): AsyncIterable<FileSystemDirectoryHandle> {
+  for await (const [name, child] of entries(root)) {
     if (child.kind !== 'directory') continue;
     if (await hasPackageJson(child)) {
       yield child;
+      continue;
+    }
+
+    if (!name.startsWith('@')) continue;
+    for await (const [, scopedChild] of entries(child)) {
+      if (scopedChild.kind === 'directory' && (await hasPackageJson(scopedChild))) {
+        yield scopedChild;
+      }
     }
   }
 }
