@@ -1,22 +1,24 @@
-# Offline PNPM Browser
+# Offline Package Browser
 
-Browse and search your local pnpm store in the browser, entirely offline.
+Browse and search local JavaScript package caches in the browser, entirely offline.
 
-Offline PNPM Browser indexes packages cached in your local pnpm store directly in Chromium-based browsers. It uses the File System Access API, a Web Worker, and IndexedDB so package metadata is processed locally without a filesystem-reading app server.
+Offline Package Browser indexes packages cached by pnpm, Bun, and Yarn directly in Chromium-based browsers. It uses the File System Access API, Web Workers, ZIP reading for Yarn archives, and IndexedDB so package metadata is processed locally without a filesystem-reading app server.
 
 ## Features
 
-- Browser-local indexing from a user-selected pnpm store
+- Browser-local indexing from user-selected package caches
+- pnpm store, Bun cache, and Yarn Berry zip cache support
+- Central IndexedDB package index deduped by `name@version`
 - Local package search from IndexedDB
 - Category browsing from generated package lists
 - Package detail pages with READMEs and copyable install commands
 - Dependency and dependent graph navigation from the browser index
-- Incremental browser re-indexing
+- Incremental pnpm re-indexing
 - Offline operation after the app loads
 
 ## Prerequisites
 
-- pnpm
+- pnpm, Bun, or Yarn cache data
 - A Chromium-based browser for local directory access
 
 ## Quick Start
@@ -26,9 +28,17 @@ pnpm install
 pnpm run dev
 ```
 
-The app runs at `http://localhost:54321`. Use the Browser index panel to choose your pnpm store.
+The app runs at `http://localhost:54321`. If no browser index exists, the app opens onboarding so you can choose a cache source.
 
-## Browser-Safe Store
+## Cache Sources
+
+### pnpm
+
+Choose the folder returned by:
+
+```bash
+pnpm store path
+```
 
 Chrome may refuse to open stores under protected locations such as `~/Library` on macOS. If that happens, mirror the store into a normal user folder:
 
@@ -53,6 +63,24 @@ pnpm config delete store-dir
 pnpm store path
 ```
 
+### Bun
+
+Choose Bun's global install cache. The default is usually:
+
+```text
+~/.bun/install/cache
+```
+
+If you use a custom cache, choose the folder from `BUN_INSTALL_CACHE_DIR`.
+
+### Yarn
+
+Choose a Yarn Berry cache folder containing `.zip` archives. In many projects this is:
+
+```text
+.yarn/cache
+```
+
 ## Running In Production
 
 ```bash
@@ -70,9 +98,9 @@ pnpm run start
 
 ## Indexing
 
-The browser indexer scans your selected pnpm store, reads each package's `package.json` and README from the content store via integrity hashes, and writes package records to IndexedDB. Incremental updates compare pnpm index file mtimes against the previous browser index timestamp.
+The browser indexer scans selected package caches, reads each package's `package.json` and README, and writes normalized package records to IndexedDB. Records from multiple sources are merged by `name@version` and retain source metadata.
 
-The selected folder should be a pnpm v10 store with `index` and `files` directories. Check the active pnpm store path with:
+For pnpm, the selected folder should be a v10 store with `index` and `files` directories. Check the active pnpm store path with:
 
 ```bash
 pnpm store path
@@ -95,6 +123,7 @@ pnpm store path
 - [Vite](https://vite.dev) 8
 - File System Access API
 - Web Workers
+- [zip.js](https://github.com/gildas-lormeau/zip.js) for Yarn cache archives
 - IndexedDB
 - [sugar-high](https://github.com/huozhi/sugar-high) for syntax highlighting
 - [marked](https://marked.js.org) for markdown rendering
