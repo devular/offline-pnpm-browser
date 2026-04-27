@@ -26,8 +26,27 @@ export function YarnIndexPanel() {
   const [state, setState] = useState<'idle' | 'indexing' | 'done' | 'error'>('idle');
   const [progress, setProgress] = useState<IndexProgress | null>(null);
   const [message, setMessage] = useState<string | null>(null);
+  const [hasIndex, setHasIndex] = useState(false);
   const workerRef = useRef<Worker | null>(null);
   const writeChainRef = useRef<Promise<void>>(Promise.resolve());
+
+  useEffect(() => {
+    let cancelled = false;
+    const refresh = async () => {
+      const stats = await getBrowserIndexStats();
+      if (!cancelled) setHasIndex(stats.totalPackages > 0);
+    };
+    const onUpdated = () => {
+      refresh().catch(() => setHasIndex(false));
+    };
+
+    refresh().catch(() => setHasIndex(false));
+    window.addEventListener('browser-index-updated', onUpdated);
+    return () => {
+      cancelled = true;
+      window.removeEventListener('browser-index-updated', onUpdated);
+    };
+  }, []);
 
   useEffect(() => {
     return () => workerRef.current?.terminate();
@@ -129,7 +148,7 @@ export function YarnIndexPanel() {
             onClick={startIndex}
             disabled={state === 'indexing'}
           >
-            Choose Yarn cache
+            {hasIndex ? 'Update index' : 'Choose Yarn cache'}
           </button>
         </div>
       </div>
