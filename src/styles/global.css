@@ -1075,18 +1075,28 @@ a {
 }
 
 /* Install command */
+.install-cmd-list {
+  display: grid;
+  gap: var(--s2);
+  max-width: 42rem;
+  margin-bottom: var(--s4);
+}
+
 .install-cmd {
-  display: inline-flex;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
-  gap: var(--s4);
+  gap: var(--s3);
+  width: 100%;
   background: var(--ink);
   color: var(--paper);
   padding: var(--s3) var(--s4);
-  margin-bottom: var(--s4);
+  border: 1px solid var(--ink);
   cursor: pointer;
   transition: opacity var(--speed) var(--ease);
   font-family: var(--font-mono);
   font-size: var(--text-xs);
+  text-align: left;
 }
 
 .install-cmd:hover {
@@ -1099,6 +1109,9 @@ a {
 
 .install-cmd-text {
   font-family: inherit;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .install-cmd-prompt {
@@ -1124,6 +1137,18 @@ a {
 
 .install-cmd-copied {
   color: var(--accent);
+}
+
+.install-cmd-label {
+  min-width: 3rem;
+  font-family: var(--font-display);
+  font-weight: 700;
+}
+
+.install-cmd-note {
+  grid-column: 2 / -1;
+  color: var(--text-3);
+  line-height: 1.35;
 }
 
 /* Copy button icon/text toggle */
@@ -1666,7 +1691,10 @@ a {
 
   .install-cmd {
     width: 100%;
-    justify-content: space-between;
+  }
+
+  .install-cmd-note {
+    grid-column: 1 / -1;
   }
 
   .status-bar {

@@ -179,7 +179,7 @@ function PackagePage() {
         </div>
 
         {/* Install command */}
-        <InstallCommand name={pkg.name} version={pkg.version} />
+        <InstallCommand name={pkg.name} version={pkg.version} sources={pkg.sources} />
 
         {(pkg.categories.length > 0 || pkg.keywords.length > 0) && (
           <div className="pkg-tags-row">
