@@ -12,7 +12,7 @@ export function CacheConfigureCallout({
 
   return (
     <section className={`cache-config-callout cache-config-callout-${position}`}>
-      <div>
+      <div className="cache-config-body">
         <h3>{hasIndex ? 'Local cache configured' : 'Configure your local cache'}</h3>
         <p>
           {hasIndex

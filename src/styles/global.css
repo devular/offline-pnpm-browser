@@ -405,13 +405,13 @@ a {
 }
 
 .cache-config-callout {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
   gap: var(--s6);
   border: 1px solid var(--ink);
   background: var(--paper);
-  padding: var(--s5);
+  padding: var(--s6);
 }
 
 .cache-config-callout-top {
@@ -422,24 +422,30 @@ a {
   margin-top: var(--s8);
 }
 
+.cache-config-body {
+  min-width: 0;
+}
+
 .cache-config-callout h3 {
   font-family: var(--font-display);
   font-size: var(--text-base);
+  line-height: 1.2;
   color: var(--ink);
-  margin-bottom: var(--s1);
+  margin-bottom: var(--s2);
 }
 
 .cache-config-callout p {
   font-size: var(--text-sm);
+  line-height: 1.45;
   color: var(--text-2);
   max-width: 42rem;
 }
 
 .cache-config-status {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--s2) var(--s5);
-  margin-top: var(--s3);
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(8.5rem, max-content));
+  gap: var(--s2) var(--s4);
+  margin-top: var(--s4);
   font-family: var(--font-mono);
   font-size: var(--text-xs);
   color: var(--text-3);
@@ -447,9 +453,10 @@ a {
 }
 
 .cache-config-meta {
-  margin-top: var(--s2);
+  margin-top: var(--s3);
   font-family: var(--font-mono);
   font-size: var(--text-xs) !important;
+  line-height: 1.45;
   color: var(--text-3) !important;
 }
 
@@ -465,7 +472,9 @@ a {
   color: var(--paper);
   background: var(--ink);
   border: 1px solid var(--ink);
-  padding: var(--s2) var(--s3);
+  min-height: 3rem;
+  padding: var(--s3) var(--s4);
+  white-space: nowrap;
 }
 
 .cache-config-link:hover {
@@ -1578,7 +1587,8 @@ a {
   }
 
   .cache-config-callout {
-    flex-direction: column;
+    grid-template-columns: 1fr;
+    align-items: stretch;
   }
 
   .browser-index-actions {
