@@ -1,10 +1,10 @@
-import { createFileRoute, useNavigate } from '@tanstack/react-router';
+import { createFileRoute } from '@tanstack/react-router';
 import { useEffect, useState } from 'react';
 import { getBrowserIndexStats } from '@root/lib/browser/indexDb';
 import type { BrowserIndexStats } from '@root/lib/browser/packages';
 import { getBrowserCategories } from '@root/lib/browser/categories';
 import { CategoryGrid } from '@root/components/CategoryGrid';
-import { BrowserIndexPanel } from '@root/components/browser/BrowserIndexPanel';
+import { CacheConfigureCallout } from '@root/components/CacheConfigureCallout';
 
 export const Route = createFileRoute('/')({
   component: HomePage,
@@ -12,7 +12,6 @@ export const Route = createFileRoute('/')({
 
 function HomePage() {
   const categories = getBrowserCategories();
-  const navigate = useNavigate();
   const [browserStats, setBrowserStats] = useState<BrowserIndexStats | null>(null);
 
   useEffect(() => {
@@ -21,11 +20,7 @@ function HomePage() {
       try {
         const nextStats = await getBrowserIndexStats();
         if (!cancelled) {
-          if (nextStats.totalPackages === 0) {
-            navigate({ to: '/onboarding', replace: true });
-            return;
-          }
-          setBrowserStats(nextStats);
+          setBrowserStats(nextStats.totalPackages > 0 ? nextStats : null);
         }
       } catch {
         if (!cancelled) setBrowserStats(null);
@@ -63,13 +58,15 @@ function HomePage() {
   return (
     <>
       <main className="home-main">
+        {!browserStats && <CacheConfigureCallout stats={browserStats} position="top" />}
+
         <div className="home-hero">
           <h2 className="home-title">
             Browse {visibleStats.uniquePackages.toLocaleString()} packages
           </h2>
           <p className="home-subtitle">
-            Your local pnpm store, indexed and searchable. Browse READMEs, trace dependency graphs,
-            and install packages offline — all from cached data, no network required.
+            Your local package caches, indexed and searchable. Browse READMEs, trace dependency
+            graphs, and install packages offline — all from cached data, no network required.
           </p>
           <div className="home-stats">
             <span>{visibleStats.totalPackages.toLocaleString()} versions</span>
@@ -79,9 +76,9 @@ function HomePage() {
           </div>
         </div>
 
-        <BrowserIndexPanel />
-
         <CategoryGrid categories={categories} />
+
+        {browserStats && <CacheConfigureCallout stats={browserStats} position="bottom" />}
       </main>
 
       <footer className="status-bar">

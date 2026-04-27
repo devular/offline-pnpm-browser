@@ -7,11 +7,11 @@ import { packageSourceAdapters } from '@root/lib/browser/adapters';
 import { getBrowserIndexStats } from '@root/lib/browser/indexDb';
 import type { BrowserIndexStats } from '@root/lib/browser/packages';
 
-export const Route = createFileRoute('/onboarding')({
-  component: OnboardingPage,
+export const Route = createFileRoute('/configure')({
+  component: ConfigurePage,
 });
 
-function OnboardingPage() {
+function ConfigurePage() {
   const [stats, setStats] = useState<BrowserIndexStats | null>(null);
 
   useEffect(() => {
@@ -34,15 +34,15 @@ function OnboardingPage() {
   }, []);
 
   return (
-    <main className="onboarding-page">
-      <section className="onboarding-hero">
-        <h1>Choose a local package cache</h1>
+    <main className="configure-page">
+      <section className="configure-hero">
+        <h1>Configure local package caches</h1>
         <p>
           Package Explorer builds one deduped browser index from package manager caches you grant.
           Everything stays local in this browser.
         </p>
         {stats && (
-          <Link to="/" className="onboarding-primary-link">
+          <Link to="/" className="configure-primary-link">
             Open explorer with {stats.uniquePackages.toLocaleString()} packages
           </Link>
         )}

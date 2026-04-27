@@ -404,8 +404,77 @@ a {
   font-weight: 300;
 }
 
-/* ═══ Onboarding ═══ */
-.onboarding-page {
+.cache-config-callout {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--s6);
+  border: 1px solid var(--ink);
+  background: var(--paper);
+  padding: var(--s5);
+}
+
+.cache-config-callout-top {
+  margin-bottom: var(--s8);
+}
+
+.cache-config-callout-bottom {
+  margin-top: var(--s8);
+}
+
+.cache-config-callout h3 {
+  font-family: var(--font-display);
+  font-size: var(--text-base);
+  color: var(--ink);
+  margin-bottom: var(--s1);
+}
+
+.cache-config-callout p {
+  font-size: var(--text-sm);
+  color: var(--text-2);
+  max-width: 42rem;
+}
+
+.cache-config-status {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s2) var(--s5);
+  margin-top: var(--s3);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--text-3);
+  font-variant-numeric: tabular-nums;
+}
+
+.cache-config-meta {
+  margin-top: var(--s2);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs) !important;
+  color: var(--text-3) !important;
+}
+
+.cache-config-link {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--paper);
+  background: var(--ink);
+  border: 1px solid var(--ink);
+  padding: var(--s2) var(--s3);
+}
+
+.cache-config-link:hover {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+/* ═══ Configure ═══ */
+.configure-page {
   flex: 1;
   max-width: var(--content-w);
   margin: 0 auto;
@@ -413,12 +482,12 @@ a {
   padding: var(--s12) var(--s6) var(--s8);
 }
 
-.onboarding-hero {
+.configure-hero {
   max-width: 44rem;
   margin-bottom: var(--s8);
 }
 
-.onboarding-hero h1 {
+.configure-hero h1 {
   font-family: var(--font-display);
   font-size: var(--text-2xl);
   line-height: 1.1;
@@ -426,12 +495,12 @@ a {
   margin-bottom: var(--s3);
 }
 
-.onboarding-hero p {
+.configure-hero p {
   color: var(--text-2);
   font-size: var(--text-sm);
 }
 
-.onboarding-primary-link {
+.configure-primary-link {
   display: inline-flex;
   margin-top: var(--s4);
   font-family: var(--font-mono);
@@ -443,7 +512,7 @@ a {
   letter-spacing: 0.06em;
 }
 
-.onboarding-primary-link:hover {
+.configure-primary-link:hover {
   background: var(--accent);
 }
 
@@ -1508,12 +1577,18 @@ a {
     flex-direction: column;
   }
 
+  .cache-config-callout {
+    flex-direction: column;
+  }
+
   .browser-index-actions {
     width: 100%;
   }
 
-  .browser-index-btn {
+  .browser-index-btn,
+  .cache-config-link {
     flex: 1;
+    width: 100%;
   }
 
   .category-grid {

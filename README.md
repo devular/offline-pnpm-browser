@@ -28,7 +28,7 @@ pnpm install
 pnpm run dev
 ```
 
-The app runs at `http://localhost:54321`. If no browser index exists, the app opens onboarding so you can choose a cache source.
+The app runs at `http://localhost:54321`. Use `/configure` to choose local package cache sources and build the browser index.
 
 ## Cache Sources
 
