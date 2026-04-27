@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from '@tanstack/react-router';
 import { useEffect, useState } from 'react';
 import { BrowserIndexPanel } from '@root/components/browser/BrowserIndexPanel';
+import { DirectoryIndexPanel } from '@root/components/browser/DirectoryIndexPanel';
 import { packageSourceAdapters } from '@root/lib/browser/adapters';
 import { getBrowserIndexStats } from '@root/lib/browser/indexDb';
 import type { BrowserIndexStats } from '@root/lib/browser/packages';
@@ -62,6 +63,12 @@ function OnboardingPage() {
       </section>
 
       <BrowserIndexPanel />
+      <DirectoryIndexPanel
+        sourceType="bun"
+        title="Bun cache"
+        description="Choose Bun's global install cache, usually ~/.bun/install/cache. Package folders are merged into the same browser index and deduped by name and version."
+        buttonLabel="Choose Bun cache"
+      />
     </main>
   );
 }

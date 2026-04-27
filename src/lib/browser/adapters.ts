@@ -41,7 +41,7 @@ export const packageSourceAdapters: PackageSourceAdapter[] = [
     id: 'bun',
     label: 'Bun cache',
     description: 'Bun global package cache, usually ~/.bun/install/cache.',
-    status: 'planned',
+    status: 'ready',
     folderHint: 'Choose the folder configured by BUN_INSTALL_CACHE_DIR or Bun defaults.',
     detect: () => false,
   },
