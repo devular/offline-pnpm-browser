@@ -54,6 +54,7 @@ export function useCopy(resetMs = 2000) {
       setStatus(ok ? 'copied' : 'error');
       if (timerRef.current) clearTimeout(timerRef.current);
       timerRef.current = setTimeout(() => setStatus('idle'), resetMs);
+      return ok;
     },
     [resetMs],
   );

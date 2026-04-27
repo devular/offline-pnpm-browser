@@ -1,11 +1,6 @@
-import type { ReactNode } from "react";
+import type { ReactNode } from 'react';
 
-type BadgeVariant =
-  | "curated"
-  | "discovered"
-  | "license"
-  | "keyword"
-  | "dep-type";
+type BadgeVariant = 'curated' | 'discovered' | 'license' | 'keyword' | 'dep-type';
 
 interface BadgeProps {
   variant: BadgeVariant;

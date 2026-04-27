@@ -1,5 +1,5 @@
 import { Link } from '@tanstack/react-router';
-import type { CategoriesResponse } from '@root/lib/packages.functions';
+import type { CategoriesResponse } from '@root/lib/browser/categories';
 
 export function CategoryGrid({ categories }: { categories: CategoriesResponse }) {
   return (

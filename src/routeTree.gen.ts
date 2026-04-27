@@ -8,97 +8,106 @@
 // You should NOT make any changes in this file as it will be overwritten.
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
-import { Route as rootRouteImport } from './routes/__root'
-import { Route as IndexRouteImport } from './routes/index'
-import { Route as PackageNameRouteImport } from './routes/package.$name'
-import { Route as CategorySlugRouteImport } from './routes/category.$slug'
+import { Route as rootRouteImport } from './routes/__root';
+import { Route as IndexRouteImport } from './routes/index';
+import { Route as ConfigureRouteImport } from './routes/configure';
+import { Route as PackageNameRouteImport } from './routes/package.$name';
+import { Route as CategorySlugRouteImport } from './routes/category.$slug';
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
-} as any)
+} as any);
 const PackageNameRoute = PackageNameRouteImport.update({
   id: '/package/$name',
   path: '/package/$name',
   getParentRoute: () => rootRouteImport,
-} as any)
+} as any);
+const ConfigureRoute = ConfigureRouteImport.update({
+  id: '/configure',
+  path: '/configure',
+  getParentRoute: () => rootRouteImport,
+} as any);
 const CategorySlugRoute = CategorySlugRouteImport.update({
   id: '/category/$slug',
   path: '/category/$slug',
   getParentRoute: () => rootRouteImport,
-} as any)
+} as any);
 
 export interface FileRoutesByFullPath {
-  '/': typeof IndexRoute
-  '/category/$slug': typeof CategorySlugRoute
-  '/package/$name': typeof PackageNameRoute
+  '/': typeof IndexRoute;
+  '/category/$slug': typeof CategorySlugRoute;
+  '/configure': typeof ConfigureRoute;
+  '/package/$name': typeof PackageNameRoute;
 }
 export interface FileRoutesByTo {
-  '/': typeof IndexRoute
-  '/category/$slug': typeof CategorySlugRoute
-  '/package/$name': typeof PackageNameRoute
+  '/': typeof IndexRoute;
+  '/category/$slug': typeof CategorySlugRoute;
+  '/configure': typeof ConfigureRoute;
+  '/package/$name': typeof PackageNameRoute;
 }
 export interface FileRoutesById {
-  __root__: typeof rootRouteImport
-  '/': typeof IndexRoute
-  '/category/$slug': typeof CategorySlugRoute
-  '/package/$name': typeof PackageNameRoute
+  __root__: typeof rootRouteImport;
+  '/': typeof IndexRoute;
+  '/category/$slug': typeof CategorySlugRoute;
+  '/configure': typeof ConfigureRoute;
+  '/package/$name': typeof PackageNameRoute;
 }
 export interface FileRouteTypes {
-  fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/category/$slug' | '/package/$name'
-  fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/category/$slug' | '/package/$name'
-  id: '__root__' | '/' | '/category/$slug' | '/package/$name'
-  fileRoutesById: FileRoutesById
+  fileRoutesByFullPath: FileRoutesByFullPath;
+  fullPaths: '/' | '/category/$slug' | '/configure' | '/package/$name';
+  fileRoutesByTo: FileRoutesByTo;
+  to: '/' | '/category/$slug' | '/configure' | '/package/$name';
+  id: '__root__' | '/' | '/category/$slug' | '/configure' | '/package/$name';
+  fileRoutesById: FileRoutesById;
 }
 export interface RootRouteChildren {
-  IndexRoute: typeof IndexRoute
-  CategorySlugRoute: typeof CategorySlugRoute
-  PackageNameRoute: typeof PackageNameRoute
+  IndexRoute: typeof IndexRoute;
+  CategorySlugRoute: typeof CategorySlugRoute;
+  ConfigureRoute: typeof ConfigureRoute;
+  PackageNameRoute: typeof PackageNameRoute;
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
     '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
+      id: '/';
+      path: '/';
+      fullPath: '/';
+      preLoaderRoute: typeof IndexRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
     '/package/$name': {
-      id: '/package/$name'
-      path: '/package/$name'
-      fullPath: '/package/$name'
-      preLoaderRoute: typeof PackageNameRouteImport
-      parentRoute: typeof rootRouteImport
-    }
+      id: '/package/$name';
+      path: '/package/$name';
+      fullPath: '/package/$name';
+      preLoaderRoute: typeof PackageNameRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
     '/category/$slug': {
-      id: '/category/$slug'
-      path: '/category/$slug'
-      fullPath: '/category/$slug'
-      preLoaderRoute: typeof CategorySlugRouteImport
-      parentRoute: typeof rootRouteImport
-    }
+      id: '/category/$slug';
+      path: '/category/$slug';
+      fullPath: '/category/$slug';
+      preLoaderRoute: typeof CategorySlugRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
+    '/configure': {
+      id: '/configure';
+      path: '/configure';
+      fullPath: '/configure';
+      preLoaderRoute: typeof ConfigureRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   CategorySlugRoute: CategorySlugRoute,
+  ConfigureRoute: ConfigureRoute,
   PackageNameRoute: PackageNameRoute,
-}
+};
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
-  ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { createStart } from '@tanstack/react-start'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-  }
-}
+  ._addFileTypes<FileRouteTypes>();

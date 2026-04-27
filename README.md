@@ -1,262 +1,133 @@
-# Offline PNPM Browser
+# Offline Package Browser
 
-Browse and search your local pnpm store — entirely offline.
+Browse and search local JavaScript package caches in the browser, entirely offline.
 
-**Offline PNPM Browser** indexes npm packages cached in your local pnpm store into a searchable SQLite database with full-text search. Explore ~10,000 packages by category, read READMEs, inspect dependency graphs, and copy install commands — no network required.
-
-![Homepage — browse categories and stats](screenshots/homepage.png)
+Offline Package Browser indexes packages cached by pnpm, Bun, and Yarn directly in Chromium-based browsers. It uses the File System Access API, Web Workers, ZIP reading for Yarn archives, and IndexedDB so package metadata is processed locally without a filesystem-reading app server.
 
 ## Features
 
-- Full-text search with prefix matching and fuzzy fallback
-
-  ![Search with live results and keyboard navigation](screenshots/search.png)
-
-- Category-based browsing (Node.js Core, Modern React, Build Tools, etc.)
-
-  ![Category view — Modern React](screenshots/category.png)
-
-- Package detail pages with rendered READMEs, syntax-highlighted code blocks
-
-  ![Package detail — react](screenshots/package-detail.png)
-
-- Dependency and dependent graph navigation
-- Version selector with copy-to-clipboard install commands
-- Incremental indexing — re-index in ~1 second
-- Responsive design for mobile and tablet
-- Works completely offline after initial indexing
+- Browser-local indexing from user-selected package caches
+- pnpm store, Bun cache, and Yarn Berry zip cache support
+- Central IndexedDB package index deduped by `name@version`
+- Local package search from IndexedDB
+- Category browsing from generated package lists
+- Package detail pages with READMEs and copyable install commands
+- Dependency and dependent graph navigation from the browser index
+- Incremental pnpm re-indexing
+- Offline operation after the app loads
 
 ## Prerequisites
 
-- Node.js >= 22 (uses `node:sqlite`)
-- pnpm
+- pnpm, Bun, or Yarn cache data
+- A Chromium-based browser for local directory access
 
-## Quick start
+## Quick Start
 
 ```bash
-# Install dependencies
 pnpm install
-
-# Build the SQLite database from your local pnpm store
-pnpm run index
-
-# Start the dev server
 pnpm run dev
 ```
 
-The app runs at `http://localhost:54321`.
+The app runs at `http://localhost:54321`. Use `/configure` to choose local package cache sources and build the browser index.
 
-## Installation (background service)
+## Cache Sources
 
-The install script sets up Offline PNPM Browser as a persistent background service that starts on boot and re-indexes your pnpm store every hour.
+### pnpm
 
-```bash
-./scripts/install.sh
-```
-
-This will:
-
-1. **Install dependencies** and build the production bundle
-2. **Index your pnpm store** (full on first run, incremental if a database exists)
-3. **Register a background service** that auto-starts and stays alive:
-   - **macOS** — launchd (`~/Library/LaunchAgents/com.offline-pnpm-browser.plist`)
-   - **Linux** — systemd user service (`~/.config/systemd/user/offline-pnpm-browser.service`)
-4. **Set up hourly incremental indexing** via a separate launchd/systemd timer
-5. **Install a git hook** so `git pull` automatically rebuilds and restarts the server
-
-After install, the server is available at:
-
-```
-http://localhost:54321
-```
-
-
-### Environment variables
-
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `PORT` | `54321` | Server port |
-| `HOST` | `0.0.0.0` | Bind address |
-
-Override at install time:
+Choose the folder returned by:
 
 ```bash
-PORT=8080 ./scripts/install.sh
+pnpm store path
 ```
 
-## Running in development
+Chrome may refuse to open stores under protected locations such as `~/Library` on macOS. If that happens, mirror the store into a normal user folder:
 
 ```bash
-pnpm run dev
+mkdir -p ~/pnpm-store-browser
+rsync -a --delete "$(pnpm store path)/" ~/pnpm-store-browser/v10/
 ```
 
-Starts a Vite dev server at `http://localhost:54321` with HMR.
+Then choose `~/pnpm-store-browser/v10` in the browser picker.
 
-## Running in production (manual)
+You can also move pnpm itself to the browser-safe store:
 
-If you prefer not to use the install script:
+```bash
+pnpm config set store-dir ~/pnpm-store-browser/v10
+pnpm store path
+```
+
+To restore pnpm's default store behavior:
+
+```bash
+pnpm config delete store-dir
+pnpm store path
+```
+
+### Bun
+
+Choose Bun's global install cache. The default is usually:
+
+```text
+~/.bun/install/cache
+```
+
+If you use a custom cache, choose the folder from `BUN_INSTALL_CACHE_DIR`.
+
+### Yarn
+
+Choose a Yarn Berry cache folder containing `.zip` archives. In many projects this is:
+
+```text
+.yarn/cache
+```
+
+## Running In Production
 
 ```bash
 pnpm run build
 pnpm run start
 ```
 
-Or directly:
+`start.js` serves the built SPA statically and falls back to `index.html` for client-side routes.
 
-```bash
-node start.js
-```
+### Environment Variables
+
+| Variable | Default | Description                |
+| -------- | ------- | -------------------------- |
+| `PORT`   | `54321` | Static preview server port |
 
 ## Indexing
 
-The indexer scans your local pnpm store (v10 content-addressable layout), reads each package's `package.json` and README from the content store via integrity hashes, and inserts everything into a SQLite database with FTS5 full-text search.
+The browser indexer scans selected package caches, reads each package's `package.json` and README, and writes normalized package records to IndexedDB. Records from multiple sources are merged by `name@version` and retain source metadata.
+
+For pnpm, the selected folder should be a v10 store with `index` and `files` directories. Check the active pnpm store path with:
 
 ```bash
-# First run — full index (~50-60s for ~10,000 packages)
-pnpm run index
-
-# Subsequent runs — incremental, only processes changed files (~1s)
-pnpm run index
-
-# Force a clean rebuild
-pnpm run index:full
+pnpm store path
 ```
-
-Incremental indexing compares file mtimes against a stored `last_indexed_at` timestamp. Only store index files modified since the last run are processed. The FTS index is rebuilt in bulk at the end (~1-2 seconds regardless of how many packages changed).
-
-### Force reindex
-
-Use the reindex script to manually trigger a re-index and restart the server:
-
-```bash
-# Incremental
-./scripts/reindex.sh
-
-# Full rebuild
-./scripts/reindex.sh --full
-```
-
-This works whether the server is managed by launchd, systemd, or running manually — it will attempt to restart the appropriate service after indexing.
-
-## Maintenance
-
-### Viewing logs
-
-**macOS:**
-
-```bash
-# Server logs
-tail -f ~/Library/Logs/offline-pnpm-browser/stdout.log
-tail -f ~/Library/Logs/offline-pnpm-browser/stderr.log
-
-# Indexer logs
-tail -f ~/Library/Logs/offline-pnpm-browser/index-stdout.log
-```
-
-**Linux:**
-
-```bash
-journalctl --user -u offline-pnpm-browser -f
-journalctl --user -u offline-pnpm-browser-index -f
-```
-
-### Managing the service
-
-**macOS (launchd):**
-
-```bash
-# Stop
-launchctl bootout gui/$(id -u)/com.offline-pnpm-browser
-
-# Start
-launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.offline-pnpm-browser.plist
-
-# Restart
-launchctl kickstart -k gui/$(id -u)/com.offline-pnpm-browser
-```
-
-**Linux (systemd):**
-
-```bash
-# Stop / start / restart
-systemctl --user stop offline-pnpm-browser
-systemctl --user start offline-pnpm-browser
-systemctl --user restart offline-pnpm-browser
-
-# Check status
-systemctl --user status offline-pnpm-browser
-
-# Disable on boot
-systemctl --user disable offline-pnpm-browser
-```
-
-### Uninstalling
-
-**macOS:**
-
-```bash
-launchctl bootout gui/$(id -u)/com.offline-pnpm-browser
-launchctl bootout gui/$(id -u)/com.offline-pnpm-browser.index
-rm ~/Library/LaunchAgents/com.offline-pnpm-browser.plist
-rm ~/Library/LaunchAgents/com.offline-pnpm-browser.index.plist
-rm -rf ~/Library/Logs/offline-pnpm-browser
-```
-
-**Linux:**
-
-```bash
-systemctl --user disable --now offline-pnpm-browser.service
-systemctl --user disable --now offline-pnpm-browser-index.timer
-rm ~/.config/systemd/user/offline-pnpm-browser.*
-systemctl --user daemon-reload
-```
-
-## Search
-
-Search uses a three-tier strategy:
-
-1. **FTS5 prefix search** — the primary path. Queries are tokenized and wrapped with `*` for prefix matching, so typing "fastif" matches "fastify". Ranked by FTS5 relevance.
-2. **Fuzzy fallback (Fuse.js)** — when FTS5 returns zero results, falls back to fuzzy matching with typo tolerance. Handles transpositions ("fsatify"), missing characters ("fstify"), and other typos. The Fuse index is lazy-initialized on first use and kept in memory.
-3. Searches across package names (weighted 3x), keywords (1.5x), and descriptions (1x).
-
-Results are collapsed by package name (multiple versions grouped together) with exact name matches sorted to the top.
 
 ## Scripts
 
-| Command | Description |
-|---|---|
-| `pnpm run dev` | Start Vite dev server |
-| `pnpm run build` | Build for production |
-| `pnpm run start` | Build and start production server |
-| `pnpm run index` | Index pnpm store into SQLite (incremental) |
-| `pnpm run index:full` | Full rebuild of the index |
-| `pnpm run pipeline` | Run discover → fetch → verify |
-| `pnpm run backup` | Backup indexed data |
-| `pnpm run restore` | Restore from backup |
-| `./scripts/install.sh` | Set up as background service |
-| `./scripts/reindex.sh` | Force reindex and restart server |
-| `./scripts/reindex.sh --full` | Force full reindex and restart |
+| Command             | Description                     |
+| ------------------- | ------------------------------- |
+| `pnpm run dev`      | Start Vite dev server           |
+| `pnpm run build`    | Build static SPA                |
+| `pnpm run start`    | Build and serve static SPA      |
+| `pnpm run pipeline` | Run discover -> fetch -> verify |
+| `pnpm run backup`   | Backup pnpm store               |
+| `pnpm run restore`  | Restore pnpm store backup       |
 
-## Tech stack
+## Tech Stack
 
-- [TanStack Start](https://tanstack.com/start) + React 19
+- [TanStack Router](https://tanstack.com/router) + React 19
 - [Vite](https://vite.dev) 8
-- SQLite with FTS5 via `node:sqlite`
-- [Fuse.js](https://www.fusejs.io) (fuzzy search fallback)
-- [sugar-high](https://github.com/huozhi/sugar-high) (syntax highlighting)
-- [marked](https://marked.js.org) (markdown rendering)
-
-## Contributing
-
-Contributions are welcome. Please open an issue first to discuss what you'd like to change.
-
-1. Fork the repository
-2. Create your branch (`git checkout -b feature/my-change`)
-3. Commit your changes
-4. Push to the branch and open a pull request
-
-This project uses [oxlint](https://oxc.rs) for linting and formatting, enforced via pre-commit hooks.
+- File System Access API
+- Web Workers
+- [zip.js](https://github.com/gildas-lormeau/zip.js) for Yarn cache archives
+- IndexedDB
+- [sugar-high](https://github.com/huozhi/sugar-high) for syntax highlighting
+- [marked](https://marked.js.org) for markdown rendering
 
 ## License
 
-[MIT](LICENSE)
+MIT
