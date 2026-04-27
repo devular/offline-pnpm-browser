@@ -2,20 +2,16 @@ import { createFileRoute } from '@tanstack/react-router';
 import { useEffect, useState } from 'react';
 import { getBrowserIndexStats } from '@root/lib/browser/indexDb';
 import type { BrowserIndexStats } from '@root/lib/browser/packages';
-import { getCategories, getDbStats } from '@root/lib/packages.functions';
+import { getBrowserCategories } from '@root/lib/browser/categories';
 import { CategoryGrid } from '@root/components/CategoryGrid';
 import { BrowserIndexPanel } from '@root/components/browser/BrowserIndexPanel';
 
 export const Route = createFileRoute('/')({
-  loader: async () => {
-    const [categories, stats] = await Promise.all([getCategories(), getDbStats()]);
-    return { categories, stats };
-  },
   component: HomePage,
 });
 
 function HomePage() {
-  const { categories, stats } = Route.useLoaderData();
+  const categories = getBrowserCategories();
   const [browserStats, setBrowserStats] = useState<BrowserIndexStats | null>(null);
 
   useEffect(() => {
@@ -45,16 +41,16 @@ function HomePage() {
     ? {
         totalPackages: browserStats.totalPackages,
         uniquePackages: browserStats.uniquePackages,
-        totalDependencies: browserStats.totalDependencies || stats.total_dependencies,
-        totalCategorized: stats.total_categorized,
+        totalDependencies: browserStats.totalDependencies,
+        totalCategorized: categories.totalPackages,
         source: 'browser',
       }
     : {
-        totalPackages: stats.total_packages,
-        uniquePackages: stats.unique_packages,
-        totalDependencies: stats.total_dependencies,
-        totalCategorized: stats.total_categorized,
-        source: 'server',
+        totalPackages: 0,
+        uniquePackages: 0,
+        totalDependencies: 0,
+        totalCategorized: categories.totalPackages,
+        source: 'browser',
       };
 
   return (

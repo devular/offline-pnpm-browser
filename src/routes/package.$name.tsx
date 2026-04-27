@@ -2,7 +2,7 @@ import { createFileRoute, Link, notFound } from '@tanstack/react-router';
 import { useMemo, useRef, useEffect } from 'react';
 import { marked, type MarkedExtension } from 'marked';
 import { highlight } from 'sugar-high';
-import { getPackageDetail, getDependents, getPackageVersions } from '@root/lib/packages.functions';
+import { getBrowserDependents, getBrowserPackageDetail } from '@root/lib/browser/indexDb';
 import { Badge } from '@root/components/Badge';
 import { InstallCommand } from '@root/components/InstallCommand';
 import { VersionSelector } from '@root/components/VersionSelector';
@@ -17,13 +17,12 @@ export const Route = createFileRoute('/package/$name')({
   }),
   loaderDeps: ({ search }) => ({ version: search.v }),
   loader: async ({ params, deps }) => {
-    const [pkg, dependents, versions] = await Promise.all([
-      getPackageDetail({ data: { name: params.name, version: deps.version } }),
-      getDependents({ data: params.name }),
-      getPackageVersions({ data: params.name }),
+    const [pkg, dependents] = await Promise.all([
+      getBrowserPackageDetail(params.name, deps.version),
+      getBrowserDependents(params.name),
     ]);
     if (!pkg) throw notFound();
-    return { pkg, dependents, versions };
+    return { pkg, dependents, versions: pkg.versions };
   },
   component: PackagePage,
 });
@@ -133,10 +132,10 @@ function PackagePage() {
     return () => el.removeEventListener('click', handler);
   }, [readmeHtml]);
 
-  const runtimeDepCount = pkg.dependencies.runtime.length;
-  const peerDepCount = pkg.dependencies.peer.length;
-  const devDepCount = pkg.dependencies.dev.length;
-  const optionalDepCount = pkg.dependencies.optional.length;
+  const runtimeDepCount = pkg.dependenciesByType.runtime.length;
+  const peerDepCount = pkg.dependenciesByType.peer.length;
+  const devDepCount = pkg.dependenciesByType.dev.length;
+  const optionalDepCount = pkg.dependenciesByType.optional.length;
   const totalDeps = runtimeDepCount + peerDepCount + devDepCount + optionalDepCount;
 
   return (
@@ -230,16 +229,16 @@ function PackagePage() {
             )}
           </div>
 
-          <DepsSection title="Dependencies" deps={pkg.dependencies.runtime} defaultOpen />
-          <DepsSection title="Peer Dependencies" deps={pkg.dependencies.peer} defaultOpen />
+          <DepsSection title="Dependencies" deps={pkg.dependenciesByType.runtime} defaultOpen />
+          <DepsSection title="Peer Dependencies" deps={pkg.dependenciesByType.peer} defaultOpen />
           <DepsSection
             title="Dev Dependencies"
-            deps={pkg.dependencies.dev}
+            deps={pkg.dependenciesByType.dev}
             defaultOpen={devDepCount <= 10}
           />
           <DepsSection
             title="Optional Dependencies"
-            deps={pkg.dependencies.optional}
+            deps={pkg.dependenciesByType.optional}
             defaultOpen={optionalDepCount <= 10}
           />
 

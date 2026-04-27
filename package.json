@@ -7,9 +7,6 @@
     "dev": "vite dev",
     "build": "vite build",
     "start": "vite build && node start.js",
-    "serve": "npx tsx scripts/serve.ts",
-    "index": "npx tsx scripts/index-store.ts",
-    "index:full": "npx tsx scripts/index-store.ts --full",
     "discover": "node scripts/discover.js",
     "fetch": "node scripts/fetch-all.js",
     "verify": "node scripts/verify.js",
@@ -21,13 +18,7 @@
     "prepare": "husky"
   },
   "dependencies": {
-    "@tanstack/db": "^0.5.33",
-    "@tanstack/react-db": "^0.1.77",
-    "@tanstack/react-query": "^5.95.0",
     "@tanstack/react-router": "^1.168.2",
-    "@tanstack/react-start": "^1.167.3",
-    "fastify": "^5.8.2",
-    "fuse.js": "^7.0.0",
     "marked": "^17.0.5",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",

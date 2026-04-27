@@ -1,4 +1,4 @@
-import type { BrowserPackageRecord } from '@root/lib/browser/packages';
+import type { BrowserDependencyRecord, BrowserPackageRecord } from '@root/lib/browser/packages';
 
 interface IndexFile {
   name: string;
@@ -153,7 +153,8 @@ async function processPackage(
   const description = pkgJson.description ?? null;
   const fileCount = Object.keys(index.files).length;
   const totalSize = Object.values(index.files).reduce((sum, file) => sum + (file.size || 0), 0);
-  const dependencyCount = countDependencies(pkgJson);
+  const dependencies = collectDependencies(pkgJson);
+  const dependencyCount = dependencies.length;
   const name = index.name;
   const version = index.version;
 
@@ -172,6 +173,7 @@ async function processPackage(
     fileCount,
     totalSize,
     dependencyCount,
+    dependencies,
     indexedAt: Date.now(),
     sourceMtime,
     searchText:
@@ -223,13 +225,24 @@ function normalizeAuthor(author: PackageJson['author']): string | null {
   return author.name ?? null;
 }
 
-function countDependencies(pkgJson: PackageJson): number {
-  return (
-    Object.keys(pkgJson.dependencies ?? {}).length +
-    Object.keys(pkgJson.devDependencies ?? {}).length +
-    Object.keys(pkgJson.peerDependencies ?? {}).length +
-    Object.keys(pkgJson.optionalDependencies ?? {}).length
-  );
+function collectDependencies(pkgJson: PackageJson): BrowserDependencyRecord[] {
+  const fields: Array<[keyof PackageJson, BrowserDependencyRecord['dep_type']]> = [
+    ['dependencies', 'runtime'],
+    ['devDependencies', 'dev'],
+    ['peerDependencies', 'peer'],
+    ['optionalDependencies', 'optional'],
+  ];
+  const deps: BrowserDependencyRecord[] = [];
+
+  for (const [field, type] of fields) {
+    const entries = pkgJson[field] as Record<string, string> | undefined;
+    if (!entries) continue;
+    for (const [depName, depVersion] of Object.entries(entries)) {
+      deps.push({ dep_name: depName, dep_version: depVersion, dep_type: type });
+    }
+  }
+
+  return deps;
 }
 
 function entries(

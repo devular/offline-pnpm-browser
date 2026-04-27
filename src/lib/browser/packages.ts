@@ -13,9 +13,29 @@ export interface BrowserPackageRecord {
   fileCount: number;
   totalSize: number;
   dependencyCount: number;
+  dependencies: BrowserDependencyRecord[];
   indexedAt: number;
   sourceMtime: number;
   searchText: string;
+}
+
+export interface BrowserDependencyRecord {
+  dep_name: string;
+  dep_version: string;
+  dep_type: 'runtime' | 'dev' | 'peer' | 'optional';
+}
+
+export interface BrowserDependentRecord {
+  name: string;
+  version: string;
+  dep_version: string;
+  dep_type: string;
+}
+
+export interface BrowserCategoryRecord {
+  category_slug: string;
+  category_name: string;
+  type: string;
 }
 
 export interface BrowserIndexStats {
@@ -45,4 +65,17 @@ export interface BrowserSearchResponse {
 
 export interface BrowserPackageDetail extends BrowserPackageRecord {
   versions: Array<{ id: number; version: string }>;
+  categories: BrowserCategoryRecord[];
+  dependenciesByType: {
+    runtime: BrowserDependencyRecord[];
+    dev: BrowserDependencyRecord[];
+    peer: BrowserDependencyRecord[];
+    optional: BrowserDependencyRecord[];
+  };
+}
+
+export interface BrowserDependentsResponse {
+  package: string;
+  count: number;
+  dependents: BrowserDependentRecord[];
 }

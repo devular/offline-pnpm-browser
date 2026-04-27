@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { Collapsible } from './Collapsible';
 import { DepItem } from './DepItem';
-import type { DependentsResponse } from '@root/lib/packages.functions';
+import type { BrowserDependentsResponse } from '@root/lib/browser/packages';
 
-export function CollapsibleDependents({ dependents }: { dependents: DependentsResponse }) {
+export function CollapsibleDependents({ dependents }: { dependents: BrowserDependentsResponse }) {
   const [showAll, setShowAll] = useState(false);
 
   if (dependents.count === 0) return null;

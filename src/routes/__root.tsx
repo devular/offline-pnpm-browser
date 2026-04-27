@@ -1,12 +1,9 @@
 /// <reference types="vite/client" />
 import { createRootRoute, Link, Outlet, useNavigate } from '@tanstack/react-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { searchPackages } from '@root/lib/packages.functions';
-import type { SearchResponse } from '@root/lib/packages.functions';
 import { getBrowserIndexStats, searchBrowserPackages } from '@root/lib/browser/indexDb';
-import { RootDocument } from '@root/components/RootDocument';
+import type { BrowserSearchResponse } from '@root/lib/browser/packages';
 import { NotFound } from '@root/components/NotFound';
-import appCss from '@root/styles/global.css?url';
 
 export const Route = createRootRoute({
   head: () => ({
@@ -15,21 +12,8 @@ export const Route = createRootRoute({
       { name: 'viewport', content: 'width=device-width, initial-scale=1.0' },
       { title: 'Package Explorer — Offline PNPM Browser' },
     ],
-    links: [
-      { rel: 'preconnect', href: 'https://fonts.googleapis.com' },
-      {
-        rel: 'preconnect',
-        href: 'https://fonts.gstatic.com',
-        crossOrigin: 'anonymous' as const,
-      },
-      {
-        rel: 'stylesheet',
-        href: 'https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,500;0,9..40,700;1,9..40,300&family=IBM+Plex+Mono:wght@400;500&display=swap',
-      },
-      { rel: 'stylesheet', href: appCss },
-    ],
+    links: [],
   }),
-  shellComponent: RootDocument,
   component: RootLayout,
   notFoundComponent: NotFound,
 });
@@ -49,7 +33,7 @@ function highlightMatch(text: string, query: string) {
 
 function RootLayout() {
   const navigate = useNavigate();
-  const [searchResults, setSearchResults] = useState<SearchResponse | null>(null);
+  const [searchResults, setSearchResults] = useState<BrowserSearchResponse | null>(null);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(-1);
   const [hasBrowserIndex, setHasBrowserIndex] = useState(false);
@@ -94,7 +78,7 @@ function RootLayout() {
   // Console easter egg
   useEffect(() => {
     console.log(
-      '%c[ PACKAGE EXPLORER ]%c\nBuilt with TanStack Start + SQLite FTS5\n9,855 packages indexed from your local pnpm store',
+      '%c[ PACKAGE EXPLORER ]%c\nBrowser-local pnpm store index\nNo server required after load',
       'font-weight:bold;font-size:14px;font-family:monospace',
       'font-family:monospace;color:#8a8a94',
     );
@@ -124,7 +108,7 @@ function RootLayout() {
       debounceRef.current = setTimeout(async () => {
         const results = hasBrowserIndex
           ? await searchBrowserPackages(q, 8)
-          : await searchPackages({ data: { q, limit: 8 } });
+          : { query: q, count: 0, results: [] };
         setSearchResults(results);
         setActiveIndex(-1);
         // Let the ring finish its current loop before fading out

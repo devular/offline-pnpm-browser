@@ -14,7 +14,8 @@
     "allowImportingTsExtensions": true,
     "noEmit": true,
     "paths": {
-      "@root/*": ["./src/*"]
+      "@root/*": ["./src/*"],
+      "@generated/*": ["./generated/*"]
     }
   },
   "include": ["scripts/**/*.ts", "web/**/*.ts", "src/**/*.ts", "src/**/*.tsx"],

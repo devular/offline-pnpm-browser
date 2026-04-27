@@ -1,6 +1,5 @@
 import { resolve } from 'node:path';
 import { defineConfig } from 'vite';
-import { tanstackStart } from '@tanstack/react-start/plugin/vite';
 import react from '@vitejs/plugin-react';
 
 export default defineConfig({
@@ -8,7 +7,8 @@ export default defineConfig({
   resolve: {
     alias: {
       '@root': resolve(import.meta.dirname, 'src'),
+      '@generated': resolve(import.meta.dirname, 'generated'),
     },
   },
-  plugins: [tanstackStart(), react()],
+  plugins: [react()],
 });

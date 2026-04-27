@@ -1,10 +1,12 @@
 import type {
+  BrowserDependentsResponse,
   BrowserIndexStats,
   BrowserPackageDetail,
   BrowserPackageRecord,
   BrowserSearchResponse,
   BrowserSearchResultItem,
 } from './packages';
+import { getBrowserCategoriesForPackage } from './categories';
 
 const DB_NAME = 'offline-pnpm-browser';
 const DB_VERSION = 1;
@@ -191,7 +193,38 @@ export async function getBrowserPackageDetail(
   return {
     ...selected,
     versions: packages.map((pkg, i) => ({ id: i, version: pkg.version })),
+    categories: getBrowserCategoriesForPackage(selected.name),
+    dependenciesByType: {
+      runtime: (selected.dependencies ?? []).filter((dep) => dep.dep_type === 'runtime'),
+      dev: (selected.dependencies ?? []).filter((dep) => dep.dep_type === 'dev'),
+      peer: (selected.dependencies ?? []).filter((dep) => dep.dep_type === 'peer'),
+      optional: (selected.dependencies ?? []).filter((dep) => dep.dep_type === 'optional'),
+    },
   };
+}
+
+export async function getBrowserDependents(name: string): Promise<BrowserDependentsResponse> {
+  const db = await openDb();
+  const tx = db.transaction(PACKAGE_STORE, 'readonly');
+  const packages = await requestResult<BrowserPackageRecord[]>(
+    tx.objectStore(PACKAGE_STORE).getAll(),
+  );
+  await txDone(tx);
+
+  const dependents = packages
+    .flatMap((pkg) =>
+      (pkg.dependencies ?? [])
+        .filter((dep) => dep.dep_name === name)
+        .map((dep) => ({
+          name: pkg.name,
+          version: pkg.version,
+          dep_version: dep.dep_version,
+          dep_type: dep.dep_type,
+        })),
+    )
+    .sort((a, b) => a.name.localeCompare(b.name));
+
+  return { package: name, count: dependents.length, dependents };
 }
 
 function scorePackage(pkg: BrowserPackageRecord, query: string, terms: string[]): number {
